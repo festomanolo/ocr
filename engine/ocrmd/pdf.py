@@ -413,10 +413,13 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
                     pix = doc[n - 1].get_pixmap(dpi=dpi, alpha=False)
                     rgb = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
                 local = {"figures": 0, "tables": 0}
-                pg = ocr_page_image(rgb, n, fig_dir, tmp, opts, lang, local)
+                if imaging.is_blank(rgb):                  # nothing to read: skip the slow part
+                    pg = Page(n, rgb.width, rgb.height, "ocr", notes=["blank"])
+                else:
+                    pg = ocr_page_image(rgb, n, fig_dir, tmp, replace_dpi(opts, dpi), lang, local)
                 with lock:
                     counters["figures"] += local["figures"]
-                tick(n, "ocr")
+                tick(n, "ocr", pg)
                 return pg
             with ThreadPoolExecutor(max_workers=max(1, opts.workers)) as pool:
                 for n, pg in zip(ocr_list, pool.map(work, ocr_list)):
