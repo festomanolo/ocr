@@ -95,8 +95,7 @@ final class JobStore: ObservableObject {
     @Published var isSettingUp = false
     @Published var setupError: String?
 
-    private var run: EngineRun?
-    private var pumping = false
+    private var runs: [UUID: EngineRun] = [:]
     /// Conversion only runs after the user presses Convert, so page ranges can be set first.
     @Published var started = false
     var hasQueued: Bool { jobs.contains { $0.status == .queued } }
@@ -104,6 +103,12 @@ final class JobStore: ObservableObject {
     var selectedJob: Job? { jobs.first { $0.id == selection } }
     var engineAvailable: Bool { Engine.python() != nil && Engine.engineDir() != nil }
     var isBusy: Bool { jobs.contains { $0.status == .running } }
+
+    /// How many files may convert at the same time. While one file waits on the AI (network), another can be read.
+    private func concurrency(_ s: ConvertSettings) -> Int {
+        if s.filesAtOnce > 0 { return s.filesAtOnce }
+        return s.aiEnabled ? 2 : 1
+    }
 
     init() { Task { await refreshHealth() } }
 
