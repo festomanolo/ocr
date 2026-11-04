@@ -286,9 +286,13 @@ struct OutputPanel: View {
             Divider()
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 14) {
-                        if donePages.isEmpty { Waiting() }
-                        ForEach(donePages, id: \.self) { n in
+                    VStack(alignment: .leading, spacing: 14) {
+                        if done.isEmpty { Waiting() }
+                        if done.count > shown.count {
+                            Text("\(done.count - shown.count) earlier page\(done.count - shown.count == 1 ? "" : "s") are saved — the full text appears when the conversion finishes")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        ForEach(shown, id: \.self) { n in
                             if let r = job.results[n] {
                                 PageCard(number: n, result: r, ai: job.aiState[n], kept: job.aiKept[n] ?? 0, outDir: job.outDir)
                                     .id(n)
