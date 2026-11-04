@@ -176,7 +176,12 @@ final class JobStore: ObservableObject {
         }
         files.sort { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
         let existing = Set(jobs.filter { !$0.isFinished }.map(\.url))
-        for f in files where !existing.contains(f) { jobs.append(Job(url: f)) }
+        let st = ConvertSettings.load()
+        for f in files where !existing.contains(f) {
+            var j = Job(url: f)
+            j.useAI = st.aiEnabled && st.aiReady
+            jobs.append(j)
+        }
         if selection == nil { selection = jobs.first?.id }
         if started { pump() }
     }
@@ -193,7 +198,7 @@ final class JobStore: ObservableObject {
 
     func remove(_ id: UUID) {
         guard let j = jobs.first(where: { $0.id == id }) else { return }
-        if j.status == .running { run?.cancel() }
+        if j.status == .running { runs[id]?.cancel() }
         jobs.removeAll { $0.id == id }
         if selection == id { selection = jobs.first?.id }
     }
