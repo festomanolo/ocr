@@ -235,12 +235,12 @@ def _text_page_figures(doc_page, number, fig_dir, opts, lines_all, table_blocks,
         if any(_center_in(tuple(r), tb.bbox) for tb in table_blocks):
             continue
         covered = sum((tb & r).width * (tb & r).height for tb in text_boxes if tb.intersects(r))
-        if covered / area > 0.45:               # boxed paragraph / callout, not a diagram
+        if covered / area > 0.45 or _text_container(r, lines_all):   # boxed text / callout, not a diagram
             continue
         rects.append(r)
 
     rects = _merge_rects(rects, gap=6)
-    rects = [r for r in rects if r.width >= 40 and r.height >= 40]
+    rects = [r for r in rects if r.width >= 40 and r.height >= 40 and not _text_container(r, lines_all)]
 
     blocks: List[Block] = []
     for r in rects:
@@ -262,6 +262,26 @@ def _text_page_figures(doc_page, number, fig_dir, opts, lines_all, table_blocks,
 
     counters["figures"] += len(blocks)
     return blocks
+
+
+def _text_container(r: "fitz.Rect", lines_all) -> bool:
+    """True when a candidate 'figure' mostly holds real text: a watermark or background image behind
+    paragraphs, or the thin boxes Word draws around lines. Such a rectangle must never swallow its text."""
+    inside = [l for l, _ in lines_all if _center_in(l.bbox, tuple(r))]
+    long_lines = sum(1 for l in inside if len(l.text.split()) >= 5)
+    return long_lines >= 2 or sum(len(l.text) for l in inside) > 200
+
+
+def _faint_image(doc_page, xref: int) -> bool:
+    """Near-blank / very low-contrast raster (typical page watermark)."""
+    try:
+        import io
+        data = doc_page.parent.extract_image(xref)["image"]
+        g = Image.open(io.BytesIO(data)).convert("L")
+        g.thumbnail((96, 96))
+        return float(np.asarray(g, np.float32).std()) < 18
+    except Exception:
+        return False
 
 
 def _merge_rects(rects: List["fitz.Rect"], gap: float) -> List["fitz.Rect"]:
