@@ -223,7 +223,7 @@ struct PageTile: View {
             withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
         }
         .onAppear {
-            if state == .running, !reduceMotion {
+            if active, !reduceMotion {
                 withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
             }
         }
