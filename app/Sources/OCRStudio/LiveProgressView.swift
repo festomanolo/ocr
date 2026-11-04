@@ -41,9 +41,14 @@ struct ProgressHeader: View {
             let eta = estimate(elapsed: elapsed)
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(job.total == 0 ? "Opening document…" : "Converting").font(.title3.weight(.semibold))
-                    Text(job.total > 0 ? "page \(job.done) of \(job.total)" : "")
-                        .font(.title3).foregroundStyle(.secondary).monospacedDigit()
+                    if job.phase == .refining {
+                        Label("Refining with AI", systemImage: "sparkles").font(.title3.weight(.semibold)).foregroundStyle(.purple)
+                        Text("page \(job.aiDone) of \(job.aiTotal)").font(.title3).foregroundStyle(.secondary).monospacedDigit()
+                    } else {
+                        Text(job.total == 0 ? "Opening document…" : "Converting").font(.title3.weight(.semibold))
+                        Text(job.total > 0 ? "page \(job.done) of \(job.total)" : "")
+                            .font(.title3).foregroundStyle(.secondary).monospacedDigit()
+                    }
                     Spacer()
                     Button(role: .cancel) { store.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                         .controlSize(.regular)
