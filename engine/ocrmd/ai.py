@@ -170,10 +170,19 @@ def restore_figures(original_tokenised: str, answer: str, figs: List[str]) -> st
 MAX_CHANGED = 0.45          # a page where more than this share of the words differ was rewritten, not corrected
 
 
-def validate(original: str, answer: str) -> Optional[str]:
+def _ngrams(text: str, n: int = 6) -> set:
+    w = re.findall(r"\w+", text.lower())
+    return {tuple(w[i:i + n]) for i in range(len(w) - n + 1)}
+
+
+def validate(original: str, answer: str, context: str = "") -> Optional[str]:
     """Returns a reason if the answer must be rejected."""
     if not answer.strip():
         return "empty answer"
+    if context:
+        # Small models like to "complete" a passage with words from the neighbouring pages.
+        if (_ngrams(answer) & _ngrams(context)) - _ngrams(original):
+            return "copied text from the neighbouring page"
     ratio = len(answer) / max(1, len(original))
     if ratio < 0.55 or ratio > 1.45:
         return f"length changed too much ({ratio:.2f}x)"
@@ -243,7 +252,7 @@ def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> Pa
             answer = clean_answer(chat(cfg, system, build_user_message(FIG_TOKEN_RE.sub("", before).strip(), g,
                                                                       FIG_TOKEN_RE.sub("", after).strip()),
                                        min(4000, max(256, int(len(g) / 2.5) + 192))))
-            problem = validate(g, answer)
+            problem = validate(g, answer, before + "\n" + after)
             if problem:
                 raise AIError(problem)
             out.append(answer)

@@ -214,3 +214,14 @@ def test_long_page_is_corrected_passage_by_passage_and_a_bad_passage_keeps_origi
     assert out[0].status == "corrected" and out[0].kept >= 1
     assert "Paragraph 6: The mitochondria" in out[0].text      # later passage was corrected
     assert "Paragraph 3: Teh mitochondna" in out[0].text       # the rejected passage stays as OCR
+
+
+def test_text_copied_from_neighbouring_page_is_rejected():
+    prev = "The competencies developed will impart a diverse range of abilities vital for solving complex problems."
+    page = "Scanned with ACE Scanner and a few more words here to be long enough."
+    m = Mock(lambda user: (200, page + " " + prev))
+    try:
+        out = ai.refine([(1, prev), (2, page)], {1: "ocr", 2: "ocr"}, {}, cfg(m, workers=1))
+    finally:
+        m.close()
+    assert out[1].status == "failed" and "neighbouring" in out[1].error and out[1].text == page
