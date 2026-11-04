@@ -220,7 +220,15 @@ final class JobStore: ObservableObject {
         case "file":
             update(id) { $0.outDir = ev.outDir; $0.startedAt = Date() }
         case "start":
-            update(id) { $0.total = ev.total ?? 0; $0.ocrPages = ev.ocrPageCount ?? 0; $0.lang = ev.lang ?? "" }
+            update(id) {
+                $0.total = ev.total ?? 0; $0.ocrPages = ev.ocrPageCount ?? 0; $0.lang = ev.lang ?? ""
+                $0.workers = ev.workers ?? 0
+                $0.pages = ev.pages ?? []
+                $0.pageState = Dictionary(uniqueKeysWithValues: $0.pages.map { ($0, PageState.pending) })
+                $0.results = [:]
+            }
+        case "page_start":
+            if let p = ev.page { update(id) { $0.pageState[p] = .running } }
         case "page":
             update(id) { $0.done = ev.done ?? $0.done; $0.total = ev.total ?? $0.total }
         case "warning":
