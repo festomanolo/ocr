@@ -24,6 +24,9 @@ struct SettingsView: View {
                     Text("300 dpi — recommended").tag(300)
                     Text("400 dpi — small print").tag(400)
                 }
+                Toggle("Match each scan's real resolution (faster)", isOn: $autoDPI)
+                Text("Low-resolution scans are not enlarged beyond 2× — that adds time but no detail.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Straighten tilted pages and even out lighting", isOn: $deskew)
                 languagePicker
             }
