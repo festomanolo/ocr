@@ -353,6 +353,7 @@ struct PageCard: View {
     let number: Int
     let result: PageResult
     var ai: AIState?
+    var kept = 0
     let outDir: String?
 
     var body: some View {
