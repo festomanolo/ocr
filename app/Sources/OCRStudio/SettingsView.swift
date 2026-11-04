@@ -103,6 +103,91 @@ struct GeneralSettings: View {
     }
 }
 
+// MARK: Vision layer
+
+struct VisionSettings: View {
+    @AppStorage("visionEnabled") private var enabled = false
+    @AppStorage("visionProvider") private var provider = "ollama"
+    @AppStorage("visionModel") private var model = ConvertSettings.defaultVisionModel
+    @AppStorage("visionURL") private var url = ""
+    @AppStorage("visionMode") private var mode = "low-confidence"
+    @AppStorage("visionMinConf") private var minConf = 85
+
+    @State private var apiKey = Keychain.read("vision") ?? ""
+    @State private var status: (text: String, ok: Bool)?
+    @State private var checking = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Re-read difficult pages with a vision model", isOn: $enabled)
+            } footer: {
+                Text("A second reading layer inspired by document-AI tools: Tesseract reads every page first (fast, keeps figures); pages it was unsure about are re-read by a vision model that looks at the whole page and returns Markdown with tables and formulas. Based on Xiaomi-OCR-0 (open source, Apache 2.0).")
+            }
+            if enabled {
+                Section("Model") {
+                    Picker("Runs on", selection: $provider) {
+                        Text("Ollama — this Mac").tag("ollama")
+                        Text("OpenAI-compatible server").tag("openai")
+                    }
+                    .pickerStyle(.segmented)
+                    TextField("Model", text: $model).textFieldStyle(.roundedBorder)
+                    TextField(provider == "ollama" ? "Address (default http://localhost:11434)"
+                                                   : "Server address (default http://127.0.0.1:8000/v1)", text: $url)
+                        .textFieldStyle(.roundedBorder)
+                    if provider == "openai" {
+                        SecureField("API key (optional)", text: $apiKey)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: apiKey) { Keychain.write("vision", $0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                    }
+                    HStack {
+                        Button(checking ? "Checking…" : "Check Model") { Task { await check() } }.disabled(checking)
+                        if provider == "ollama" { Spacer(); CommandRow(command: "ollama pull \(ConvertSettings.defaultVisionModel)") }
+                    }
+                    if let s = status {
+                        Label(s.text, systemImage: s.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(s.ok ? .green : .orange).font(.callout)
+                    }
+                }
+                Section {
+                    Picker("Use it for", selection: $mode) {
+                        Text("Pages Tesseract was unsure about").tag("low-confidence")
+                        Text("Every scanned page").tag("all")
+                    }
+                    if mode == "low-confidence" {
+                        Stepper("Re-read pages below \(minConf)% confidence", value: $minConf, in: 50...99, step: 5)
+                    }
+                } header: { Text("When") } footer: {
+                    Text("The vision model is much slower than Tesseract. Use it for tables, formulas and messy layouts. It needs a capable machine: Apple Silicon or a GPU server (vLLM / SGLang) is recommended, and Ollama support for this model is still experimental. If it fails, the Tesseract text is kept.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func check() async {
+        checking = true; defer { checking = false }
+        if provider == "ollama" {
+            switch await AIService.ollamaModels(baseURL: url.isEmpty ? "http://localhost:11434" : url) {
+            case .success(let names):
+                status = names.contains(model) ? ("\(model) is installed", true)
+                                               : ("\(model) isn't installed yet — run the command above", false)
+            case .failure(let e): status = (e.localizedDescription, false)
+            }
+        } else {
+            let base = (url.isEmpty ? "http://127.0.0.1:8000/v1" : url).trimmingSuffix("/")
+            guard let u = URL(string: base + "/models") else { status = ("Invalid address", false); return }
+            var req = URLRequest(url: u); req.timeoutInterval = 5
+            if !apiKey.isEmpty { req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
+            do {
+                let (_, resp) = try await URLSession.shared.data(for: req)
+                let ok = (resp as? HTTPURLResponse)?.statusCode == 200
+                status = (ok ? "Server is reachable" : "The server answered with an error", ok)
+            } catch { status = ("Can't reach \(base)", false) }
+        }
+    }
+}
+
 // MARK: AI
 
 struct AISettings: View {
