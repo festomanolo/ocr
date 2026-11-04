@@ -15,7 +15,7 @@ import time
 from datetime import datetime, timezone
 from typing import List
 
-from . import __version__, layout, tess
+from . import __version__, ai as aimod, layout, tess
 from .pdf import Options, Result, convert_image, convert_pdf
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp", ".gif"}
