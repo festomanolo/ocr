@@ -213,8 +213,8 @@ struct PageTile: View {
                 Text("\(number)").monospacedDigit()
                 if let r = result, r.kind == "ocr" { Image(systemName: "eye").font(.system(size: 8)) }
             }
-            .font(.caption2.weight(state == .running ? .semibold : .regular))
-            .foregroundStyle(state == .running ? Color.accentColor : .secondary)
+            .font(.caption2.weight(active ? .semibold : .regular))
+            .foregroundStyle(active ? accent : .secondary)
         }
         .task { image = await thumbs.image(for: number) }
         .onChange(of: state) { s in
