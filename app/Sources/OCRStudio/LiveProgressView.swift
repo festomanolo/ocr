@@ -36,7 +36,8 @@ struct ProgressHeader: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            let elapsed = job.startedAt.map { ctx.date.timeIntervalSince($0) } ?? 0
+            let start = (job.phase == .refining ? job.aiStartedAt : job.startedAt) ?? job.startedAt
+            let elapsed = start.map { ctx.date.timeIntervalSince($0) } ?? 0
             let eta = estimate(elapsed: elapsed)
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
