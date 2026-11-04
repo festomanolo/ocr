@@ -93,6 +93,7 @@ class Page:
     blocks: List[Block] = field(default_factory=list)
     confidence: Optional[float] = None
     notes: List[str] = field(default_factory=list)
+    engine: str = ""                # "" = default for the page kind, "vision" = re-read by the vision layer
 
 
 # ── Reading order ────────────────────────────────────────────────────────────
