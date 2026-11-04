@@ -229,13 +229,33 @@ def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> Pa
     """Corrects one page passage by passage; every passage is validated on its own."""
     system = SYSTEM_PROMPT.format(languages=cfg.languages)
     protected, figs = protect_figures(page)
-    user = build_user_message(prev_tail, protected, next_head)
-    max_tokens = min(8000, max(512, int(len(protected) / 2.5) + 256))
-    answer = clean_answer(chat(cfg, system, user, max_tokens))
-    problem = validate(protected, answer)
-    if problem:
-        raise AIError(problem)
-    return restore_figures(protected, answer, figs)
+    groups = split_groups(protected)
+    out: List[str] = []
+    res = PageResult("")
+    for i, g in enumerate(groups):
+        if not worth_correcting(g):
+            out.append(g)
+            continue
+        before = (groups[i - 1][-cfg.context_chars:] if i > 0 else prev_tail)
+        after = (groups[i + 1][:cfg.context_chars // 2] if i + 1 < len(groups) else next_head)
+        res.sent += 1
+        try:
+            answer = clean_answer(chat(cfg, system, build_user_message(FIG_TOKEN_RE.sub("", before).strip(), g,
+                                                                      FIG_TOKEN_RE.sub("", after).strip()),
+                                       min(4000, max(256, int(len(g) / 2.5) + 192))))
+            problem = validate(g, answer)
+            if problem:
+                raise AIError(problem)
+            out.append(answer)
+        except AIError as e:
+            msg = str(e)
+            if msg.startswith(("HTTP 401", "HTTP 403", "HTTP 404")) or "needs an API key" in msg:
+                raise                                  # configuration problem: not a per-passage failure
+            res.kept += 1
+            res.first_error = res.first_error or msg
+            out.append(g)                              # keep the original passage
+    res.text = restore_figures(protected, "\n\n".join(out), figs)
+    return res
 
 
 # ── whole document ──────────────────────────────────────────────────────────
