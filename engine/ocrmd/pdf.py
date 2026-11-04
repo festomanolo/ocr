@@ -461,7 +461,7 @@ def convert_image(path: str, out_dir: str, opts: Options, progress: Progress = l
             progress({"event": "page", "page": i, "kind": "ocr", "done": i, "total": len(frames),
                       "md": layout.assemble([pages[-1]], page_markers=False),
                       "figures": [b.image for b in pages[-1].blocks if b.kind == "figure"],
-            progress({"event": "page", "page": i, "kind": "ocr", "done": i, "total": len(frames)})
+                      "conf": round(pages[-1].confidence, 1) if pages[-1].confidence is not None else None})
     res = Result(pages=pages, figures=counters["figures"], ocr_pages=len(pages))
     res.removed_running = layout.strip_running(pages)
     res.low_confidence = [p.number for p in pages if p.confidence is not None and p.confidence < 60]
