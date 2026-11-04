@@ -70,7 +70,7 @@ class Line:
 
 @dataclass
 class Block:
-    kind: str                       # text | table | figure
+    kind: str                       # text | table | figure | raw
     bbox: Box
     lines: List[Line] = field(default_factory=list)
     rows: List[List[str]] = field(default_factory=list)   # table
