@@ -319,15 +319,19 @@ def main(argv=None) -> int:
                    page_markers=not args.no_page_markers,
                    pages=parse_pages(args.pages) if args.pages else None)
     status = 0
-    for path in iter_inputs(args.inputs):
-        try:
-            process(path, args.out, opts, args)
-        except tess.OcrUnavailable as e:
-            emit(args, {"event": "error", "source": path, "message": str(e), "code": "ocr_unavailable"})
-            status = 2
-        except Exception as e:
-            emit(args, {"event": "error", "source": path, "message": f"{type(e).__name__}: {e}", "code": "failed"})
-            status = 1
+    try:
+        for path in iter_inputs(args.inputs):
+            try:
+                process(path, args.out, opts, args)
+            except tess.OcrUnavailable as e:
+                emit(args, {"event": "error", "source": path, "message": str(e), "code": "ocr_unavailable"})
+                status = 2
+            except Exception as e:
+                emit(args, {"event": "error", "source": path, "message": f"{type(e).__name__}: {e}", "code": "failed"})
+                status = 1
+    finally:
+        if server:
+            server.stop()
     return status
 
 
