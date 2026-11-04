@@ -378,7 +378,8 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
     if ocr_list:
         lang = tess.resolve_lang(opts.lang)          # raises OcrUnavailable with install hint
 
-    progress({"event": "start", "total": len(wanted), "ocr_pages": ocr_list, "lang": lang if ocr_list else ""})
+    progress({"event": "start", "total": len(wanted), "pages": wanted, "ocr_pages": ocr_list,
+              "lang": lang if ocr_list else "", "workers": min(opts.workers, max(1, len(ocr_list)))})
     result = Result()
     counters = {"figures": 0, "tables": 0}
     pages: Dict[int, Page] = {}
