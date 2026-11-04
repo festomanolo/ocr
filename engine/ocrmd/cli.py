@@ -173,6 +173,8 @@ def main(argv=None) -> int:
     ap.add_argument("--no-figures", action="store_true")
     ap.add_argument("--no-tables", action="store_true")
     ap.add_argument("--no-deskew", action="store_true")
+    ap.add_argument("--no-auto-dpi", action="store_true",
+                    help="Always render scans at --dpi instead of capping at 2x their real resolution")
     ap.add_argument("--no-page-markers", action="store_true")
     ap.add_argument("--no-frontmatter", action="store_true")
     ap.add_argument("--preview", action="store_true", help="Also write an HTML preview")
