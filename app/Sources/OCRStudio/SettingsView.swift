@@ -71,15 +71,8 @@ struct GeneralSettings: View {
                     if !outputPath.isEmpty { Button("Reset") { outputPath = "" } }
                 }
             }
-            Section("Engine") {
-                LabeledContent("Tesseract", value: store.health?.tesseract ?? "not found")
-                LabeledContent("MarkItDown", value: store.health?.markitdown == true ? "installed" : "not installed")
-                Button("Set Up…") { store.showSetup = true }
-            }
         }
         .formStyle(.grouped)
-        .frame(width: 540, height: 640)
-        .task { await store.refreshHealth() }
     }
 
     private var selected: Set<String> { Set(languages.split(separator: "+").map(String.init)) }
