@@ -236,11 +236,11 @@ final class JobStore: ObservableObject {
 
     private func launch(_ job: Job, _ settings: ConvertSettings) {
         try? FileManager.default.createDirectory(at: settings.outputDir, withIntermediateDirectories: true)
-        let id = next.id
-        update(id) { $0.status = .running }
+        let id = job.id
+        update(id) { $0.status = .running; $0.phase = .reading }
 
-        var args = [next.url.path, "-o", settings.outputDir.path] + settings.arguments
-        if next.isPDF, let range = PageRange.parse(next.pageRange, max: next.pageCount), !range.isEmpty {
+        var args = [job.url.path, "-o", settings.outputDir.path] + settings.arguments
+        if job.isPDF, let range = PageRange.parse(job.pageRange, max: job.pageCount), !range.isEmpty {
             args += ["--pages", range]
         }
         guard let engineRun = EngineRun(args: args) else {
