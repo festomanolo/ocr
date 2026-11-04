@@ -471,7 +471,7 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
         with lock:
             done[0] += 1
             progress({"event": "page", "page": n, "kind": kind, "done": done[0], "total": len(wanted),
-                      "md": md, "figures": figs,
+                      "md": md, "figures": figs, "engine": (pg.engine if pg is not None else ""),
                       "conf": round(pg.confidence, 1) if pg is not None and pg.confidence is not None else None})
 
     text_list = [n for n in wanted if kinds[n] == "text"]
@@ -531,6 +531,7 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
     result.text_pages = sum(1 for p in ordered if p.kind == "text")
     result.ocr_pages = sum(1 for p in ordered if p.kind == "ocr")
     result.low_confidence = [p.number for p in ordered if p.confidence is not None and p.confidence < 60]
+    result.vision_pages = [p.number for p in ordered if p.engine == "vision"]
     doc.close()
     return result
 
