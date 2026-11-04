@@ -8,3 +8,4 @@ app/.swiftpm/
 dist/
 ocr-output/
 *.xcodeproj
+models/
