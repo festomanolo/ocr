@@ -196,7 +196,7 @@ struct PageTile: View {
                 } else {
                     Image(systemName: "doc").foregroundStyle(.tertiary)
                 }
-                if state == .running { scanBeam }
+                if active { scanBeam }
             }
             .aspectRatio(0.72, contentMode: .fit)
             .overlay {
