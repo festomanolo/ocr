@@ -406,6 +406,8 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
         render_lock = threading.Lock()               # PyMuPDF documents are not thread-safe
         with tempfile.TemporaryDirectory(prefix="ocrmd-") as tmp:
             def work(n: int) -> Page:
+                with lock:
+                    progress({"event": "page_start", "page": n})
                 with render_lock:
                     pix = doc[n - 1].get_pixmap(dpi=opts.dpi, alpha=False)
                     rgb = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
