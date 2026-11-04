@@ -10,6 +10,8 @@ struct ConvertSettings {
     var tables: Bool
     var pageMarkers: Bool
     var deskew: Bool
+    var autoDPI: Bool
+    var workers: Int            // 0 = automatic
     var outputDir: URL
 
     static var defaultOutput: URL {
