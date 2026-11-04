@@ -69,6 +69,8 @@ struct Report: Decodable, Equatable {
     var words: Int
     var seconds: Double
     var ai: AIReport?
+    var visionPages: [Int]?
+    var visionModel: String?
 
     enum CodingKeys: String, CodingKey {
         case markdown, preview, method, pages, figures, tables, words, seconds, ai
