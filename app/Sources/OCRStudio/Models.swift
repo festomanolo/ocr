@@ -63,6 +63,13 @@ struct Job: Identifiable, Equatable {
     var log: [String] = []
     /// "1-20, 45" — empty means every page.
     var pageRange = ""
+    // Live progress
+    var pages: [Int] = []
+    var pageState: [Int: PageState] = [:]
+    var results: [Int: PageResult] = [:]
+    var workers = 0
+    var startedAt: Date?
+    var outDir: String?
     var pageCount: Int?
 
     init(url: URL) {
