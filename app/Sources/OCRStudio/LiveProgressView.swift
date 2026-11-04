@@ -300,7 +300,7 @@ struct OutputPanel: View {
                                                             removal: .opacity))
                             }
                         }
-                        if !running.isEmpty { ReadingRow(pages: running).id("reading") }
+                        if !running.isEmpty { ReadingRow(pages: running, ai: job.phase == .refining).id("reading") }
                     }
                     .padding(16)
                 }
@@ -329,6 +329,14 @@ struct Waiting: View {
 
 struct ReadingRow: View {
     let pages: [Int]
+    var ai = false
+
+    private var label: String {
+        let verb = ai ? "Refining" : "Reading"
+        let noun = pages.count == 1 ? "page" : "pages"
+        let list = pages.prefix(6).map(String.init).joined(separator: ", ")
+        return "\(verb) \(noun) \(list)" + (pages.count > 6 ? "…" : "")
+    }
     var body: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
