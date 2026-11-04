@@ -71,6 +71,7 @@ class PageOutcome:
     status: str                       # corrected | unchanged | skipped | failed
     changed: float = 0.0              # share of words that differ
     error: str = ""
+    kept: int = 0                     # passages that stayed as OCR because the model's answer was rejected
 
 
 # ── chat call ───────────────────────────────────────────────────────────────
