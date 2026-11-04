@@ -91,7 +91,7 @@ enum Engine {
         let p = Process()
         p.executableURL = py
         p.arguments = ["-m", "ocrmd"] + args
-        p.environment = environment()
+        p.environment = environment().merging(extraEnv) { _, new in new }
         p.currentDirectoryURL = dir
         return p
     }
