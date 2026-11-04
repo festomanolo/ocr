@@ -27,7 +27,8 @@ engine/ocrmd/
   imaging.py    clean_image (lighting flatten + deskew), figure-region detection for scans, blank-page test
   tess.py       Tesseract wrapper (TSV words/positions/confidence), language resolution
   ai.py         optional text-LLM correction (Ollama / OpenRouter), passage-by-passage, guards
-  vision.py     optional vision layer (Xiaomi-OCR-0 via Ollama or OpenAI-compatible server), OTSL→Markdown
+  vision.py     optional vision layer (Xiaomi-OCR-0 via llama-server, Ollama or OpenAI-compatible), OTSL→Markdown
+  llamaserver.py  finds llama-server + GGUFs, starts a private server on a free localhost port, stops it after the run
 app/Sources/OCRStudio/   SwiftUI app (macOS 13+, Swift Package, no Xcode project)
   Engine.swift      finds Python + engine, runs `python -m ocrmd`, parses JSON lines (EngineRun)
   Store.swift       JobStore: queue, settings (ConvertSettings), concurrency, event batching
