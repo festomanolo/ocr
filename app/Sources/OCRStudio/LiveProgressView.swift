@@ -364,12 +364,20 @@ struct PageCard: View {
                 if let c = result.confidence {
                     Chip(icon: "checkmark.seal", text: "\(Int(c))%", tint: c >= 80 ? .green : (c >= 60 ? .orange : .red))
                 }
+                switch ai {
+                case .corrected(let share)?: Chip(icon: "sparkles", text: "AI edited \(max(1, Int((share * 100).rounded())))%", tint: .purple)
+                case .unchanged?: Chip(icon: "sparkles", text: "AI: no changes needed", tint: .secondary)
+                case .failed(let why)?: Chip(icon: "exclamationmark.triangle", text: "AI kept original · \(why)", tint: .orange)
+                default: EmptyView()
+                }
                 Spacer()
             }
             if result.markdown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("No text on this page").font(.callout).foregroundStyle(.tertiary)
             } else {
                 MarkdownLite(markdown: result.markdown, outDir: outDir)
+                    .id(result.markdown)
+                    .transition(.opacity)
             }
         }
         .padding(14)
