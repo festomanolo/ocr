@@ -27,7 +27,22 @@ struct ConvertSettings {
     /// ~/Documents/ocr
     static var defaultOutput: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("OCR Studio", isDirectory: true)
+            .appendingPathComponent("ocr", isDirectory: true)
+    }
+
+    var aiModel: String { aiProvider == "ollama" ? ollamaModel : openRouterModel }
+    /// Whether AI correction can actually run with the current settings.
+    var aiReady: Bool {
+        guard !aiModel.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        return aiProvider == "ollama" || !(Keychain.read("openrouter") ?? "").isEmpty
+    }
+
+    var aiArguments: [String] {
+        var a = ["--ai", aiProvider, "--ai-model", aiModel, "--ai-workers", String(aiWorkers),
+                 "--ai-scope", aiScope]
+        if aiProvider == "ollama" { a += ["--ai-url", ollamaURL] }
+        if aiSkipConfident { a += ["--ai-skip-confident", "95"] }
+        return a
     }
 
     static func load() -> ConvertSettings {
@@ -43,7 +58,16 @@ struct ConvertSettings {
             deskew: d.object(forKey: "deskew") as? Bool ?? true,
             autoDPI: d.object(forKey: "autoDPI") as? Bool ?? true,
             workers: d.object(forKey: "workers") as? Int ?? 0,
-            outputDir: path.isEmpty ? defaultOutput : URL(fileURLWithPath: path)
+            filesAtOnce: d.object(forKey: "filesAtOnce") as? Int ?? 0,
+            outputDir: path.isEmpty ? defaultOutput : URL(fileURLWithPath: path),
+            aiEnabled: d.object(forKey: "aiEnabled") as? Bool ?? false,
+            aiProvider: d.string(forKey: "aiProvider") ?? "ollama",
+            ollamaURL: d.string(forKey: "ollamaURL") ?? "http://localhost:11434",
+            ollamaModel: d.string(forKey: "ollamaModel") ?? "",
+            openRouterModel: d.string(forKey: "openRouterModel") ?? "google/gemini-2.0-flash-001",
+            aiWorkers: d.object(forKey: "aiWorkers") as? Int ?? 3,
+            aiScope: d.string(forKey: "aiScope") ?? "ocr",
+            aiSkipConfident: d.object(forKey: "aiSkipConfident") as? Bool ?? true
         )
     }
 
