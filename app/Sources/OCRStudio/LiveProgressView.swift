@@ -53,6 +53,7 @@ struct ProgressHeader: View {
                     Button(role: .cancel) { store.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                         .controlSize(.regular)
                 }
+                if job.useAI || !job.aiModel.isEmpty { PhaseSteps(job: job) }
                 ProgressView(value: job.fraction)
                     .progressViewStyle(.linear)
                     .animation(.easeOut(duration: 0.4), value: job.done)
