@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 enum DetailTab: String, CaseIterable, Identifiable {
-    case preview = "Preview", markdown = "Markdown", figures = "Figures"
+    case preview = "Preview", markdown = "Markdown", original = "Original OCR", figures = "Figures"
     var id: String { rawValue }
 }
 
