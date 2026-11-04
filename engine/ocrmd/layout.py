@@ -21,6 +21,7 @@ KEYWORD_HEADING_RE = re.compile(
 )
 CAPTION_RE = re.compile(r"^\s*(fig(?:ure)?|table|chart|diagram|plate|picture|illustration)\.?\s*[\dIVX]+",
                         re.IGNORECASE)
+BULLET_CHARS = set("•●▪◦‣■□○◆▶·✓➢➤")
 BULLET_RE = re.compile(r"^\s*([•●▪◦‣■□○◆▶·\-–—*])\s+(?=\S)")
 NUMBER_RE = re.compile(r"^\s*((?:\d{1,3}|[a-z]|[ivx]{1,4})[.)])\s+(?=\S)")
 PAGE_NUMBER_RE = re.compile(r"^\s*(page\s*)?\d{1,4}(\s*(of|/)\s*\d{1,4})?\s*$|^\s*[-–—]\s*\d{1,4}\s*[-–—]\s*$",
@@ -32,6 +33,8 @@ class Span:
     text: str
     bold: bool = False
     italic: bool = False
+    mono: bool = False
+    href: str = ""
 
 
 @dataclass
