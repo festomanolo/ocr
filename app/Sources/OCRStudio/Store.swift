@@ -230,7 +230,16 @@ final class JobStore: ObservableObject {
         case "page_start":
             if let p = ev.page { update(id) { $0.pageState[p] = .running } }
         case "page":
-            update(id) { $0.done = ev.done ?? $0.done; $0.total = ev.total ?? $0.total }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                update(id) {
+                    $0.done = ev.done ?? $0.done; $0.total = ev.total ?? $0.total
+                    if let p = ev.page {
+                        $0.pageState[p] = .done
+                        $0.results[p] = PageResult(markdown: ev.md ?? "", kind: ev.kind ?? "text",
+                                                   confidence: ev.conf, figures: ev.figures ?? [])
+                    }
+                }
+            }
         case "warning":
             update(id) { $0.log.append(ev.message ?? "") }
         case "error":
