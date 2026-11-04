@@ -56,7 +56,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 560)
+        .frame(width: 540, height: 640)
         .task { await store.refreshHealth() }
     }
 
