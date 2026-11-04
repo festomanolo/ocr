@@ -109,7 +109,7 @@ def simulate_tesseract(monkeypatch, source_pdf, conf=92.0):
         words = []
         for x0, y0, x1, y1, text, block, line, _ in page.get_text("words"):
             words.append(tess.Word(text, int(x0 * s), int(y0 * s), int((x1 - x0) * s), int((y1 - y0) * s),
-                                   92.0, block, 0, line))
+                                   conf, block, 0, line))
         return words
 
     monkeypatch.setattr(tess, "ocr_words", fake)
