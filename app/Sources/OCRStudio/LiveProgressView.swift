@@ -157,7 +157,7 @@ struct PagesPanel: View {
                 }
                 .onChange(of: runningAnchor) { anchor in
                     guard follow, let anchor else { return }
-                    withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo(anchor, anchor: .center) }
+                    proxy.scrollTo(anchor, anchor: .center)     // no animation: animated scrolls in a lazy grid thrash layout
                 }
             }
         }
