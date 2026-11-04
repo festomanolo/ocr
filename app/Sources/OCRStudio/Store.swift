@@ -316,6 +316,7 @@ final class JobStore: ObservableObject {
                     default: $0.aiState[p] = .failed(ev.reason ?? "")
                     }
                     if let md = ev.md, var r = $0.results[p], ev.status != "failed" { r.markdown = md; $0.results[p] = r }
+                    $0.aiKept[p] = ev.kept ?? 0
                     $0.aiDone = max($0.aiDone, ev.done ?? 0)
                 }
             }
