@@ -113,9 +113,9 @@ Default output: `~/Documents/ocr/<file name>/` (`.md`, `.ocr.md` when AI ran, `.
 1. **Push to GitHub** — blocked on credentials (user needs a token or `gh auth login`); then push `main`.
    Open question to the user: also push the auto-committed history in `ocr-nested-git-backup` as branches
    `agent-app-history` / `agent-engine-history` (contains `.build/` junk; maybe clean first).
-2. **Validate the vision layer on the real model**: `ollama pull longwayxu/xiaomi-ocr-0:bf16` was started
-   (slow link, ~1.8 GB, check `ollama list`); needs a newer Ollama (≥ 0.35) and ideally Apple Silicon / GPU.
-   Then tune prompt/decoding, measure accuracy vs Tesseract, decide the default threshold.
+2. **Vision layer**: engine wiring done (llamaserver.py). Left: Mac app setting for the `llamacpp` provider (+ a
+   `vision_starting`/`vision_ready` event in the live view), more accuracy/speed measurements (tables, 100 vs 150 dpi),
+   compare PaddleOCR-VL-1.6 (0.9B, official GGUF), decide the default `--vision-min-conf`, bundle llama-server.
 3. **Searchable PDF export** (PDFelement-style): original scan + invisible text layer from OCR line boxes; needs
    mapping coordinates back through the deskew rotation.
 4. Table reconstruction for scans (Tesseract word grid or vision-layer OTSL for table regions).
