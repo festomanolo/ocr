@@ -136,7 +136,7 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
         res = convert_image(path, out_dir, opts, lambda e: emit(args, e))
         body, method = layout.assemble(res.pages, page_markers=opts.page_markers), "tesseract"
     else:
-        emit(args, {"event": "start", "total": 1, "ocr_pages": [], "lang": ""})
+        emit(args, {"event": "start", "total": 1, "pages": [1], "ocr_pages": [], "lang": ""})
         body, method = convert_with_markitdown(path), "markitdown"
         emit(args, {"event": "page", "page": 1, "kind": "text", "done": 1, "total": 1})
 
