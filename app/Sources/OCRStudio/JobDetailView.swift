@@ -125,26 +125,7 @@ struct Chip: View {
 
 struct RunningView: View {
     let job: Job
-    var body: some View {
-        VStack(spacing: 18) {
-            ProgressView(value: job.fraction) {
-                Text(job.total > 0 ? "Page \(job.done) of \(job.total)" : "Opening document…")
-                    .font(.headline)
-            } currentValueLabel: {
-                if job.ocrPages > 0 {
-                    Text("\(job.ocrPages) scanned page\(job.ocrPages == 1 ? "" : "s") are being read with Tesseract (\(job.lang))")
-                } else if job.total > 0 {
-                    Text("Reading the text layer")
-                }
-            }
-            .frame(maxWidth: 420)
-            if !job.log.isEmpty {
-                Text(job.log.last ?? "").font(.caption).foregroundStyle(.orange)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
+    var body: some View { LiveProgressView(job: job) }
 }
 
 // MARK: Rendered preview
