@@ -46,6 +46,7 @@ struct JobDetailView: View {
                         MarkdownTextView(path: r.markdown)
                     }
                 case .markdown: MarkdownTextView(path: r.markdown)
+                case .original: MarkdownTextView(path: (r.markdown as NSString).deletingPathExtension + ".ocr.md")
                 case .figures: FiguresView(dir: URL(fileURLWithPath: r.outDir).appendingPathComponent("figures"))
                 }
             }
