@@ -178,3 +178,12 @@ def crop(img: Image.Image, box: Box, pad: int = 6) -> Image.Image:
 def mean_ink(img: Image.Image) -> Optional[float]:
     a = np.asarray(img.convert("L"))
     return float((a < 128).mean()) if a.size else None
+
+
+def is_blank(img: Image.Image, ink_fraction: float = 0.0004) -> bool:
+    """True for an empty page (no text, no picture): lets us skip OCR entirely."""
+    small = img.convert("L").reduce(4)
+    a = np.asarray(small, np.float32)
+    if a.std() > 18:                      # contrast somewhere: a picture or heavy page
+        return False
+    return float((a < a.mean() - 40).mean()) < ink_fraction
