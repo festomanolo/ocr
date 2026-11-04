@@ -14,7 +14,17 @@ struct ConvertSettings {
     var workers: Int            // 0 = automatic
     var filesAtOnce: Int        // 0 = automatic
     var outputDir: URL
+    // AI correction
+    var aiEnabled: Bool
+    var aiProvider: String      // "ollama" | "openrouter"
+    var ollamaURL: String
+    var ollamaModel: String
+    var openRouterModel: String
+    var aiWorkers: Int
+    var aiScope: String         // "ocr" | "all"
+    var aiSkipConfident: Bool
 
+    /// ~/Documents/ocr
     static var defaultOutput: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("OCR Studio", isDirectory: true)
