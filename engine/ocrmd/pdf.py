@@ -42,7 +42,8 @@ class Options:
     dpi: int = 300                       # OCR render resolution
     figures: bool = True
     figure_dpi: int = 200
-    workers: int = max(1, min(4, (os.cpu_count() or 2) - 1))
+    workers: int = max(1, min(6, (os.cpu_count() or 2) // 2))   # ≈ physical cores; Tesseract is single-threaded per page
+    auto_dpi: bool = True                # never render a scan at more than ~2x its real resolution
     page_markers: bool = True
     deskew: bool = True
     tables: bool = True
