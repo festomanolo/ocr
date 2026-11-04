@@ -317,7 +317,12 @@ def refine(chunks: List[Tuple[int, str]], kinds: Dict[int, str], confidence: Dic
             r = correct_page(cfg, prev_tail, text, next_head)
             fixed = r.text
             share = changed_share(text, fixed)
-            outcome = PageOutcome(n, fixed, "corrected" if fixed != text else "unchanged", share)
+            if r.sent and r.kept == r.sent:                  # every passage was rejected
+                outcome = PageOutcome(n, text, "failed", error=r.first_error)
+            else:
+                outcome = PageOutcome(n, fixed, "corrected" if fixed != text else "unchanged", share,
+                                      error=(f"{r.kept} of {r.sent} passages kept as OCR: {r.first_error}" if r.kept else ""),
+                                      kept=r.kept)
         except AIError as e:
             msg = str(e)
             if msg.startswith(("HTTP 401", "HTTP 403", "HTTP 404")) or "needs an API key" in msg:
