@@ -273,6 +273,8 @@ struct OutputPanel: View {
     }
 
     var body: some View {
+        let done = donePages
+        let shown = Array(done.suffix(Self.visibleCount))
         VStack(spacing: 0) {
             HStack {
                 Text("Live output").font(.headline)
