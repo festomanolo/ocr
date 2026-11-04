@@ -298,7 +298,8 @@ struct OutputPanel: View {
                                     .id(n)
                             }
                         }
-                        if !running.isEmpty { ReadingRow(pages: running, ai: job.phase == .refining).id("reading") }
+                        if !running.isEmpty { ReadingRow(pages: running, ai: job.phase == .refining) }
+                        Color.clear.frame(height: 1).id("bottom")
                     }
                     .padding(16)
                 }
