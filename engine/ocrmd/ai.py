@@ -330,7 +330,8 @@ def refine(chunks: List[Tuple[int, str]], kinds: Dict[int, str], confidence: Dic
             outcome = PageOutcome(n, text, "failed", error=msg)
         done[0] += 1
         progress({"event": "ai_page", "page": n, "status": outcome.status, "reason": outcome.error,
-                  "md": outcome.text, "changed": outcome.changed, "done": done[0], "total": len(eligible)})
+                  "md": outcome.text, "changed": outcome.changed, "kept": outcome.kept,
+                  "done": done[0], "total": len(eligible)})
         return outcome
 
     with ThreadPoolExecutor(max_workers=max(1, cfg.workers)) as pool:
