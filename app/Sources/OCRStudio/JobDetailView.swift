@@ -23,7 +23,7 @@ struct JobDetailView: View {
     @ViewBuilder private var content: some View {
         switch job.status {
         case .queued:
-            centered(icon: "clock", title: "Waiting in the queue", detail: "This file will start automatically.")
+            QueuedView(job: job)
         case .running:
             RunningView(job: job)
         case .cancelled:
@@ -252,5 +252,54 @@ struct Thumbnail: View {
                 return NSImage(cgImage: cg, size: .zero)
             }.value
         }
+    }
+}
+
+/// Shown before conversion: choose which pages to read (handy for big scanned books).
+struct QueuedView: View {
+    @EnvironmentObject var store: JobStore
+    let job: Job
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "doc.text.viewfinder").font(.system(size: 42, weight: .light)).foregroundStyle(.tint)
+            Text("Ready to convert").font(.title3.weight(.medium))
+            if job.isPDF {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Pages").font(.headline)
+                    HStack {
+                        TextField("All pages", text: Binding(get: { job.pageRange }, set: { store.setRange(job.id, $0) }))
+                            .textFieldStyle(.roundedBorder).frame(width: 240)
+                            .onSubmit { store.start() }
+                        if let n = job.pageCount { Text("of \(n)").foregroundStyle(.secondary) }
+                        if !job.pageRange.isEmpty {
+                            Button("All") { store.setRange(job.id, "") }.buttonStyle(.borderless)
+                        }
+                    }
+                    if job.rangeIsValid {
+                        Text("Examples: 1-20   ·   5, 9, 12-15   ·   40-  (to the end). Leave empty for every page.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Label("Use numbers and ranges like 1-20, 45\(job.pageCount.map { " (1–\($0))" } ?? "")",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption).foregroundStyle(.red)
+                    }
+                    if store.jobs.filter({ $0.status == .queued && $0.isPDF }).count > 1, !job.pageRange.isEmpty, job.rangeIsValid {
+                        Button("Use this range for all queued PDFs") { store.applyRange(job.pageRange) }
+                            .buttonStyle(.link).font(.caption)
+                    }
+                }
+                .frame(width: 400)
+            }
+            HStack {
+                Button { store.start() } label: { Label("Convert", systemImage: "play.fill").padding(.horizontal, 10) }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .disabled(!job.rangeIsValid)
+                    .keyboardShortcut(.defaultAction)
+                Button("Remove") { store.remove(job.id) }.controlSize(.large)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
 }

@@ -22,6 +22,10 @@ struct ContentView: View {
             ToolbarItemGroup {
                 Button { store.pickFiles() } label: { Label("Add Files", systemImage: "plus") }
                     .help("Add PDFs, scans or documents (⌘O)")
+                if store.hasQueued && !store.isBusy {
+                    Button { store.start() } label: { Label("Convert", systemImage: "play.fill") }
+                        .help("Convert all queued files")
+                }
                 if store.isBusy {
                     Button { store.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                         .help("Stop the current conversion")

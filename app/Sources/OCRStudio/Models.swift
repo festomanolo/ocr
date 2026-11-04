@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 
 enum JobStatus: Equatable {
     case queued, running, done, failed(String), cancelled
@@ -51,8 +52,18 @@ struct Job: Identifiable, Equatable {
     var lang = ""
     var report: Report?
     var log: [String] = []
+    /// "1-20, 45" — empty means every page.
+    var pageRange = ""
+    var pageCount: Int?
+
+    init(url: URL) {
+        self.url = url
+        self.pageCount = url.pathExtension.lowercased() == "pdf" ? PDFDocument(url: url)?.pageCount : nil
+    }
 
     var name: String { url.lastPathComponent }
+    var isPDF: Bool { url.pathExtension.lowercased() == "pdf" }
+    var rangeIsValid: Bool { PageRange.parse(pageRange, max: pageCount) != nil }
     var fraction: Double { total > 0 ? Double(done) / Double(total) : 0 }
     var isFinished: Bool {
         switch status { case .done, .failed, .cancelled: return true; default: return false }
@@ -116,3 +127,28 @@ let supportedExtensions: Set<String> = [
     "pdf", "png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp", "gif",
     "docx", "pptx", "xlsx", "xls", "html", "htm", "epub", "csv", "txt", "md",
 ]
+
+enum PageRange {
+    /// Parses "1-5, 9, 12-" into a normalised string, or nil if invalid. Empty = all pages (returns "").
+    static func parse(_ text: String, max: Int?) -> String? {
+        let t = text.trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { return "" }
+        var parts: [String] = []
+        for raw in t.split(separator: ",") {
+            let p = raw.trimmingCharacters(in: .whitespaces)
+            let bits = p.split(separator: "-", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+            switch bits.count {
+            case 1:
+                guard let a = Int(bits[0]), a >= 1, max == nil || a <= max! else { return nil }
+                parts.append("\(a)")
+            case 2:
+                guard let a = Int(bits[0]), a >= 1 else { return nil }
+                let b = bits[1].isEmpty ? max : Int(bits[1])          // "12-" = to the end
+                guard let b, b >= a, max == nil || a <= max! else { return nil }
+                parts.append("\(a)-\(Swift.min(b, max ?? b))")
+            default: return nil
+            }
+        }
+        return parts.joined(separator: ",")
+    }
+}

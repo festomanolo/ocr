@@ -39,7 +39,29 @@ enum Engine {
             let dev = dir.deletingLastPathComponent().appendingPathComponent(".venv/bin/python")
             if fm.isExecutableFile(atPath: dev.path) { return dev }
         }
-        return nil
+        // Reuse an already-installed Python that has the engine's packages: no second install.
+        return systemPythons().first(where: hasPackages)
+    }
+
+    private static var packageCache: [String: Bool] = [:]
+    static func hasPackages(_ py: URL) -> Bool {
+        if let c = packageCache[py.path] { return c }
+        let p = Process()
+        p.executableURL = py
+        p.arguments = ["-c", "import pymupdf, PIL, numpy"]
+        p.standardOutput = Pipe(); p.standardError = Pipe()
+        let ok = (try? p.run()) != nil && { p.waitUntilExit(); return p.terminationStatus == 0 }()
+        packageCache[py.path] = ok
+        return ok
+    }
+
+    static func systemPythons() -> [URL] {
+        [
+            "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
+            "/opt/homebrew/bin/python3", "/usr/local/bin/python3", "/opt/local/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3", "/usr/bin/python3",
+        ].filter { FileManager.default.isExecutableFile(atPath: $0) }.map { URL(fileURLWithPath: $0) }
     }
 
     static func systemPython() -> URL? {

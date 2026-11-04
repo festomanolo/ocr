@@ -56,6 +56,9 @@ final class JobStore: ObservableObject {
 
     private var run: EngineRun?
     private var pumping = false
+    /// Conversion only runs after the user presses Convert, so page ranges can be set first.
+    @Published var started = false
+    var hasQueued: Bool { jobs.contains { $0.status == .queued } }
 
     var selectedJob: Job? { jobs.first { $0.id == selection } }
     var engineAvailable: Bool { Engine.python() != nil && Engine.engineDir() != nil }
@@ -129,7 +132,17 @@ final class JobStore: ObservableObject {
         let existing = Set(jobs.filter { !$0.isFinished }.map(\.url))
         for f in files where !existing.contains(f) { jobs.append(Job(url: f)) }
         if selection == nil { selection = jobs.first?.id }
-        pump()
+        if started { pump() }
+    }
+
+    func start() { started = true; pump() }
+
+    func applyRange(_ range: String, toAllQueued: Bool = true) {
+        for i in jobs.indices where jobs[i].status == .queued && jobs[i].isPDF { jobs[i].pageRange = range }
+    }
+
+    func setRange(_ id: UUID, _ range: String) {
+        if let i = jobs.firstIndex(where: { $0.id == id }) { jobs[i].pageRange = range }
     }
 
     func remove(_ id: UUID) {
@@ -145,6 +158,7 @@ final class JobStore: ObservableObject {
     }
 
     func stop() {
+        started = false
         for i in jobs.indices where jobs[i].status == .queued { jobs[i].status = .cancelled }
         run?.cancel()
     }
@@ -152,7 +166,7 @@ final class JobStore: ObservableObject {
     func retry(_ id: UUID) {
         guard let i = jobs.firstIndex(where: { $0.id == id }) else { return }
         jobs[i].status = .queued; jobs[i].done = 0; jobs[i].total = 0; jobs[i].report = nil; jobs[i].log = []
-        pump()
+        start()
     }
 
     // MARK: Running
@@ -161,14 +175,20 @@ final class JobStore: ObservableObject {
     }
 
     private func pump() {
-        guard !pumping, let next = jobs.first(where: { $0.status == .queued }) else { return }
+        guard started, !pumping, let next = jobs.first(where: { $0.status == .queued }) else {
+            if !hasQueued && !isBusy { started = false }
+            return
+        }
         pumping = true
         let settings = ConvertSettings.load()
         try? FileManager.default.createDirectory(at: settings.outputDir, withIntermediateDirectories: true)
         let id = next.id
         update(id) { $0.status = .running }
 
-        let args = [next.url.path, "-o", settings.outputDir.path] + settings.arguments
+        var args = [next.url.path, "-o", settings.outputDir.path] + settings.arguments
+        if next.isPDF, let range = PageRange.parse(next.pageRange, max: next.pageCount), !range.isEmpty {
+            args += ["--pages", range]
+        }
         guard let engineRun = EngineRun(args: args) else {
             update(id) { $0.status = .failed("The conversion engine isn't installed yet.") }
             pumping = false
