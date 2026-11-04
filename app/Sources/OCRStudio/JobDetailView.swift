@@ -88,7 +88,7 @@ struct JobDetailView: View {
                         }
                     }
                     Picker("", selection: $tab) {
-                        ForEach(DetailTab.allCases.filter { $0 != .figures || r.figures > 0 }) { Text($0.rawValue).tag($0) }
+                        ForEach(DetailTab.allCases.filter { ($0 != .figures || r.figures > 0) && ($0 != .original || r.ai != nil) }) { Text($0.rawValue).tag($0) }
                     }
                     .pickerStyle(.segmented).labelsHidden().frame(width: 250)
                 }
