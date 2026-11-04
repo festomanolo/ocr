@@ -456,6 +456,7 @@ def convert_image(path: str, out_dir: str, opts: Options, progress: Progress = l
     pages = []
     with tempfile.TemporaryDirectory(prefix="ocrmd-") as tmp:
         for i, frame in enumerate(frames, start=1):
+            progress({"event": "page_start", "page": i})
             pages.append(ocr_page_image(frame, i, fig_dir, tmp, opts, lang, counters))
             progress({"event": "page", "page": i, "kind": "ocr", "done": i, "total": len(frames)})
     res = Result(pages=pages, figures=counters["figures"], ocr_pages=len(pages))
