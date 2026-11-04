@@ -303,7 +303,7 @@ struct OutputPanel: View {
                     }
                     .padding(16)
                 }
-                .onChange(of: donePages.count) { _ in
+                .onChange(of: done.count) { _ in
                     guard follow else { return }
                     withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo("reading", anchor: .bottom) }
                 }
