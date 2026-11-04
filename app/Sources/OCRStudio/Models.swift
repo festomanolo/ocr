@@ -65,6 +65,7 @@ struct Report: Decodable, Equatable {
     var lowConfidencePages: [Int]
     var words: Int
     var seconds: Double
+    var ai: AIReport?
 
     enum CodingKeys: String, CodingKey {
         case markdown, preview, method, pages, figures, tables, words, seconds
