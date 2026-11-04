@@ -217,8 +217,8 @@ struct PageTile: View {
             .foregroundStyle(active ? accent : .secondary)
         }
         .task { image = await thumbs.image(for: number) }
-        .onChange(of: state) { s in
-            guard s == .running, !reduceMotion else { return }
+        .onChange(of: active) { on in
+            guard on, !reduceMotion else { return }
             beam = 0
             withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
         }
