@@ -149,7 +149,10 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
     if ext == ".pdf":
         try:
             res = convert_pdf(path, out_dir, opts, lambda e: emit(args, e))
-            body = layout.assemble(res.pages, page_markers=opts.page_markers)
+            if ai_cfg and res.pages:
+                body, ai_summary = refine_with_ai(res, opts, ai_cfg, args, md_path)
+            else:
+                body = layout.assemble(res.pages, page_markers=opts.page_markers)
             method = "pymupdf+tesseract" if res.ocr_pages else "pymupdf"
         except tess.OcrUnavailable:
             raise
