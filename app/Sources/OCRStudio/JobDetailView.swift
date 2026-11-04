@@ -75,7 +75,7 @@ struct JobDetailView: View {
                 .pickerStyle(.segmented).labelsHidden().frame(width: r.ai != nil ? 400 : 270)
                 ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            Chip(icon: "doc.plaintext", text: "\(r.pages) pages")
+                            Chip(icon: "doc.plaintext", text: "\(r.pages) page\(r.pages == 1 ? "" : "s")")
                             if r.textPages > 0 { Chip(icon: "textformat", text: "\(r.textPages) text layer") }
                             if r.ocrPages > 0 { Chip(icon: "eye", text: "\(r.ocrPages) OCR", tint: .purple) }
                             if r.figures > 0 { Chip(icon: "photo", text: "\(r.figures) figure\(r.figures == 1 ? "" : "s")") }
