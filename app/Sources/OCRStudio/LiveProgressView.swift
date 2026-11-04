@@ -340,9 +340,7 @@ struct ReadingRow: View {
     var body: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text("Reading page\(pages.count == 1 ? "" : "s") " + pages.prefix(6).map(String.init).joined(separator: ", ")
-                 + (pages.count > 6 ? "…" : ""))
-                .foregroundStyle(.secondary)
+            Text(label).foregroundStyle(.secondary)
         }
         .font(.callout)
         .padding(.horizontal, 12).padding(.vertical, 8)
