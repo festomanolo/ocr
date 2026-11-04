@@ -358,6 +358,11 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
 
 
 # ── Whole document ──────────────────────────────────────────────────────────
+def replace_dpi(opts: Options, dpi: int) -> Options:
+    import dataclasses
+    return dataclasses.replace(opts, dpi=dpi)
+
+
 def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lambda e: None) -> Result:
     fig_dir = os.path.join(out_dir, "figures")
     os.makedirs(fig_dir, exist_ok=True)
