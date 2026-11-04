@@ -173,10 +173,15 @@ struct PageTile: View {
     let number: Int
     let state: PageState
     let result: PageResult?
+    var ai: AIState?
     @ObservedObject var thumbs: Thumbnailer
     @State private var image: NSImage?
     @State private var beam: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var refining: Bool { ai == .running }
+    private var active: Bool { state == .running || refining }
+    private var accent: Color { refining ? .purple : .accentColor }
 
     var body: some View {
         VStack(spacing: 5) {
