@@ -177,6 +177,7 @@ struct EngineEvent: Decodable {
     var kept: Int?
     var model: String?
     var provider: String?
+    var engine: String?
 
     enum CodingKeys: String, CodingKey {
         case event, page, kind, done, total, message, code, lang, pages, md, figures, conf, workers
