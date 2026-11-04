@@ -288,6 +288,11 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
     if opts.figures:
         boxes = [(w.left, w.top, w.left + w.width, w.top + w.height) for w in solid]
         regions = imaging.find_figure_regions(gray, boxes, cell=max(6, opts.dpi // 25))
+        # A region that holds a lot of confidently read text is a decorated text box, not a picture.
+        def words_in(box):
+            return sum(1 for w in words if w.conf >= 60 and box[0] <= w.left + w.width / 2 <= box[2]
+                       and box[1] <= w.top + w.height / 2 <= box[3])
+        regions = [r for r in regions if words_in(r) <= 40]
         for n, box in enumerate(regions, start=1):
             name = f"p{number:04d}_f{n}.jpg"
             imaging.crop(color, box).save(os.path.join(fig_dir, name), quality=88)
@@ -313,7 +318,7 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
             bbox = (min(w.left for w in ws), min(w.top for w in ws),
                     max(w.left + w.width for w in ws), max(w.top + w.height for w in ws))
             heights = sorted(w.height for w in ws)
-            size = float(np.percentile(heights, 70))
+            size = float(np.median(heights))
             blk.lines.append(Line([Span(text)], bbox, size))
             boxes.append(bbox)
         blk.bbox = (min(b[0] for b in boxes), min(b[1] for b in boxes),

@@ -75,8 +75,10 @@ def find_figure_regions(
     """
     W, H = gray.size
     gw, gh = max(1, W // cell), max(1, H // cell)
-    a = np.asarray(gray.resize((gw * cell, gh * cell)), np.uint8)
-    ink = (a < 190).reshape(gh, cell, gw, cell).mean(axis=(1, 3)) > 0.06
+    a = np.asarray(gray.resize((gw * cell, gh * cell)), np.float32)
+    # "Detail" = local contrast. Photos and line art have it; flat coloured boxes, shaded
+    # backgrounds and blank paper do not, so they are never mistaken for pictures.
+    ink = a.reshape(gh, cell, gw, cell).std(axis=(1, 3)) > 25
 
     text = np.zeros((gh, gw), bool)
     for x0, y0, x1, y1 in text_boxes:
@@ -109,6 +111,8 @@ def find_figure_regions(
         density = float(cand[sub].sum()) / area
         text_cover = float(text[sub].sum()) / area
         if density < 0.10 or text_cover > 0.35:          # sparse ruled box / boxed text, not a picture
+            continue
+        if area > 0.65 * gw * gh:                        # page-sized art: keep the text, skip the "figure"
             continue
         regions.append((box[0] * cell, box[1] * cell, min(W, box[2] * cell), min(H, box[3] * cell)))
     return _merge_overlapping(regions)

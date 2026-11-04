@@ -23,7 +23,9 @@ def photo_png() -> bytes:
     for y in range(300):
         for x in range(480):
             px[y, x] = (int(255 * x / 480), int(255 * y / 300), 140)
-    img = Image.fromarray(px).filter(ImageFilter.GaussianBlur(1))
+    rng = np.random.default_rng(7)
+    px = (px.astype(np.int16) + rng.normal(0, 40, px.shape)).clip(0, 255).astype(np.uint8)   # grainy, photo-like
+    img = Image.fromarray(px).filter(ImageFilter.GaussianBlur(0.6))
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 

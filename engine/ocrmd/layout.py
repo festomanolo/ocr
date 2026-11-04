@@ -199,7 +199,8 @@ class Styler:
                     continue
                 for l in b.lines:
                     r = self.ratio(p, l)
-                    if r >= self.threshold(p) and len(l.text) <= 200:
+                    if r >= self.threshold(p) and len(l.text) <= 200 \
+                            and (p.kind == "text" or len(l.text.split()) <= 12):
                         ratios.append(round(r / 0.05) * 0.05)
         self.levels: List[float] = []
         for r in sorted(set(ratios), reverse=True):
@@ -208,7 +209,8 @@ class Styler:
 
     @staticmethod
     def threshold(page: Page) -> float:
-        return 1.12 if page.kind == "text" else 1.28
+        # Glyph heights from OCR are noisy (tall letters, brackets), so scans need a bigger jump.
+        return 1.12 if page.kind == "text" else 1.5
 
     def ratio(self, page: Page, line: Line) -> float:
         body = self.body.get("text") if page.kind == "text" else self.page_body.get(page.number)
@@ -217,6 +219,8 @@ class Styler:
     def level(self, page: Page, line: Line) -> int:
         r = self.ratio(page, line)
         if r < self.threshold(page) or len(line.text) > 200:
+            return 0
+        if page.kind == "ocr" and len(line.text.split()) > 12:   # long line = body text, not a title
             return 0
         rr = round(r / 0.05) * 0.05
         for i, lv in enumerate(self.levels):
@@ -330,6 +334,8 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
     for line in lines:
         text = line.text
         level = styler.level(page, line)
+        if level and page.kind == "ocr" and len(lines) > 2:   # inside a paragraph: just a tall line
+            level = 0
         if not level and single and line.all_bold and len(text.split()) <= 10 \
                 and not text.endswith((".", ",", ";")):
             level = 4
