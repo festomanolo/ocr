@@ -336,10 +336,8 @@ final class JobStore: ObservableObject {
                     : .failed(tail.isEmpty ? "The engine stopped unexpectedly (status \(code))." : tail)
             }
         }
-        run = nil
-        pumping = false
+        runs[id] = nil
         pump()
-        Task { await refreshHealth() }
     }
 
     // MARK: Actions on results
