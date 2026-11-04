@@ -79,8 +79,10 @@ struct ProgressHeader: View {
     }
 
     private func estimate(elapsed: TimeInterval) -> TimeInterval? {
-        guard job.done >= 2, job.total > job.done, elapsed > 3 else { return nil }
-        return elapsed / Double(job.done) * Double(job.total - job.done)
+        let done = job.phase == .refining ? job.aiDone : job.done
+        let total = job.phase == .refining ? job.aiTotal : job.total
+        guard done >= 2, total > done, elapsed > 3 else { return nil }
+        return elapsed / Double(done) * Double(total - done)
     }
 
     private func format(_ t: TimeInterval) -> String {
