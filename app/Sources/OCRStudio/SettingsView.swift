@@ -47,12 +47,15 @@ struct GeneralSettings: View {
             }
             Section {
                 Picker("Pages at once", selection: $workers) {
-                    Text("Automatic (\(max(1, min(6, ProcessInfo.processInfo.activeProcessorCount / 2))))").tag(0)
+                    Text("Automatic (\(autoWorkers))").tag(0)
                     ForEach([1, 2, 3, 4, 6, 8], id: \.self) { Text("\($0)").tag($0) }
                 }
-                Text("Each page is read by its own Tesseract process. More pages at once is faster until your Mac runs out of cores.")
-                    .font(.caption).foregroundStyle(.secondary)
-                languagePicker
+                Picker("Files at once", selection: $filesAtOnce) {
+                    Text("Automatic").tag(0)
+                    ForEach([1, 2, 3], id: \.self) { Text("\($0)").tag($0) }
+                }
+            } header: { Text("Speed") } footer: {
+                Text("Each page is read by its own Tesseract process. With AI correction on, two files run together so one reads pages while the other waits for the AI.")
             }
             Section("Markdown") {
                 Toggle("Extract figures as images", isOn: $figures)
