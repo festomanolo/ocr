@@ -138,7 +138,7 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
     else:
         emit(args, {"event": "start", "total": 1, "pages": [1], "ocr_pages": [], "lang": ""})
         body, method = convert_with_markitdown(path), "markitdown"
-        emit(args, {"event": "page", "page": 1, "kind": "text", "done": 1, "total": 1})
+        emit(args, {"event": "page", "page": 1, "kind": "text", "done": 1, "total": 1, "md": body[:20000]})
 
     text = (front_matter(path, res, method, 0) if not args.no_frontmatter else "") + body
     with open(md_path, "w", encoding="utf-8") as f:
