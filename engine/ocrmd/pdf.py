@@ -404,6 +404,8 @@ _WORKER_DOC = None
 
 def _pool_init(path: str) -> None:
     global _WORKER_DOC
+    import sys
+    sys.stdout = sys.stderr          # stdout carries the JSON progress stream; keep library chatter off it
     _WORKER_DOC = fitz.open(path)
 
 
