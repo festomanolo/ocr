@@ -117,6 +117,12 @@ struct EngineEvent: Decodable {
     var code: String?
     var lang: String?
     var ocrPageCount: Int?
+    var pages: [Int]?
+    var md: String?
+    var figures: [String]?
+    var conf: Double?
+    var workers: Int?
+    var outDir: String?
 
     enum CodingKeys: String, CodingKey {
         case event, page, kind, done, total, message, code, lang
