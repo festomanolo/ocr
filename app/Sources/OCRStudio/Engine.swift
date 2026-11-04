@@ -170,8 +170,8 @@ final class EngineRun {
     private let lock = NSLock()
     private(set) var stderrTail: [String] = []
 
-    init?(args: [String]) {
-        guard let p = Engine.makeProcess(args: args) else { return nil }
+    init?(args: [String], extraEnv: [String: String] = [:]) {
+        guard let p = Engine.makeProcess(args: args, extraEnv: extraEnv) else { return nil }
         process = p
         p.standardOutput = outPipe
         p.standardError = errPipe
