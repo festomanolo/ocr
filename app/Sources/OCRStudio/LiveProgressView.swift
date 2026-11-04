@@ -177,7 +177,6 @@ struct PageTile: View {
     var ai: AIState?
     @ObservedObject var thumbs: Thumbnailer
     @State private var image: NSImage?
-    @State private var beam: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var refining: Bool { ai == .running }
