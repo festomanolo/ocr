@@ -56,13 +56,19 @@ struct ProgressHeader: View {
                 if job.useAI || !job.aiModel.isEmpty { PhaseSteps(job: job) }
                 ProgressView(value: job.fraction)
                     .progressViewStyle(.linear)
-                    .animation(.easeOut(duration: 0.4), value: job.done)
+                    .tint(job.phase == .refining ? .purple : .accentColor)
+                    .animation(.easeOut(duration: 0.4), value: job.fraction)
                 HStack(spacing: 16) {
                     Stat(icon: "percent", text: "\(Int(job.fraction * 100))%")
                     Stat(icon: "clock", text: format(elapsed) + " elapsed")
                     if let eta { Stat(icon: "hourglass", text: "about " + format(eta) + " left") }
-                    if job.workers > 0 { Stat(icon: "square.grid.2x2", text: "\(job.workers) page\(job.workers == 1 ? "" : "s") at once") }
-                    if job.ocrPages > 0 { Stat(icon: "eye", text: "Tesseract · \(job.lang)") }
+                    if job.phase == .refining {
+                        Stat(icon: "square.grid.2x2", text: "\(job.aiWorkers) page\(job.aiWorkers == 1 ? "" : "s") at once")
+                        Stat(icon: "sparkles", text: job.aiModel)
+                    } else {
+                        if job.workers > 0 { Stat(icon: "square.grid.2x2", text: "\(job.workers) page\(job.workers == 1 ? "" : "s") at once") }
+                        if job.ocrPages > 0 { Stat(icon: "eye", text: "Tesseract · \(job.lang)") }
+                    }
                     Spacer()
                 }
                 .font(.caption)
