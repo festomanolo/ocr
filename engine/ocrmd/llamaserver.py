@@ -91,3 +91,97 @@ def availability(explicit_server: str = "", gguf: str = "", mmproj: str = "") ->
     """What --doctor reports, and what the app can use to enable the setting."""
     server = find_server(explicit_server)
     model, proj = find_models(gguf, mmproj)
+    return {"server": str(server) if server else None, "model": str(model) if model else None,
+            "mmproj": str(proj) if proj else None, "ready": bool(server and model and proj)}
+
+
+def _free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+class LlamaServer:
+    """Context manager: `with LlamaServer(...) as srv:` → srv.base_url is an OpenAI-compatible /v1 root."""
+
+    def __init__(self, server: Path, model: Path, mmproj: Path, threads: int = 0, ctx: int = CTX_SIZE,
+                 startup_timeout: int = 240):
+        self.server, self.model, self.mmproj = server, model, mmproj
+        logical = os.cpu_count() or 2
+        self.threads = threads or (logical // 2 if logical >= 4 else logical)   # ≈ physical cores
+        self.ctx = ctx
+        self.startup_timeout = startup_timeout
+        self.port = 0
+        self.proc: Optional[subprocess.Popen] = None
+        self._log = None
+        self._log_path = ""
+
+    @property
+    def base_url(self) -> str:
+        return f"http://127.0.0.1:{self.port}/v1"
+
+    def command(self) -> List[str]:
+        return [str(self.server), "-m", str(self.model), "--mmproj", str(self.mmproj),
+                "--host", "127.0.0.1", "--port", str(self.port), "-c", str(self.ctx),
+                "-t", str(self.threads), "-np", "1", "--no-webui", "--alias", MODEL_NAME]
+
+    def start(self) -> "LlamaServer":
+        self.port = _free_port()
+        fd, self._log_path = tempfile.mkstemp(prefix="ocrmd-llama-", suffix=".log")
+        self._log = os.fdopen(fd, "w")
+        try:
+            self.proc = subprocess.Popen(self.command(), stdout=self._log, stderr=subprocess.STDOUT,
+                                         stdin=subprocess.DEVNULL, cwd=str(self.server.parent))
+        except OSError as e:
+            self._cleanup_log()
+            raise ServerError(f"could not start llama-server: {e}")
+        deadline = time.time() + self.startup_timeout
+        while time.time() < deadline:
+            if self.proc.poll() is not None:
+                raise ServerError(f"llama-server exited with code {self.proc.returncode}: {self._tail()}")
+            if self._healthy():
+                return self
+            time.sleep(0.5)
+        self.stop()
+        raise ServerError(f"llama-server did not become ready within {self.startup_timeout}s: {self._tail()}")
+
+    def _healthy(self) -> bool:
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{self.port}/health", timeout=2) as r:
+                return r.status == 200 and json.loads(r.read() or b"{}").get("status", "ok") == "ok"
+        except Exception:
+            return False
+
+    def _tail(self, n: int = 400) -> str:
+        try:
+            self._log.flush()
+            return Path(self._log_path).read_text(errors="replace")[-n:].strip().replace("\n", " | ")
+        except Exception:
+            return ""
+
+    def _cleanup_log(self) -> None:
+        try:
+            if self._log:
+                self._log.close()
+            if self._log_path:
+                os.unlink(self._log_path)
+        except OSError:
+            pass
+        self._log = None
+
+    def stop(self) -> None:
+        if self.proc and self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(timeout=3)       # a busy server ignores SIGTERM until its current task ends
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
+        self.proc = None
+        self._cleanup_log()
+
+    def __enter__(self) -> "LlamaServer":
+        return self.start()
+
+    def __exit__(self, *exc) -> None:
+        self.stop()
