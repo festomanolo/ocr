@@ -229,10 +229,30 @@ struct PageTile: View {
         }
     }
 
+    /// Green check once read; purple sparkle once the AI has corrected the page; orange warning if the AI kept the original.
+    @ViewBuilder private var badge: some View {
+        let symbol: (String, Color)? = {
+            switch ai {
+            case .corrected: return ("sparkles", .purple)
+            case .failed: return ("exclamationmark.triangle.fill", .orange)
+            default: return state == .done ? ("checkmark.circle.fill", .green) : nil
+            }
+        }()
+        if let (name, color) = symbol, !refining {
+            Image(systemName: name)
+                .symbolRenderingMode(name == "checkmark.circle.fill" ? .palette : .monochrome)
+                .foregroundStyle(name == "checkmark.circle.fill" ? Color.white : color, color)
+                .font(.system(size: 17))
+                .background(Circle().fill(.background).padding(2))
+                .offset(x: 5, y: 5)
+                .transition(.scale(scale: 0.2).combined(with: .opacity))
+        }
+    }
+
     /// A soft scan line sweeping over the page that is being read.
     @ViewBuilder private var scanBeam: some View {
         if reduceMotion {
-            Rectangle().fill(Color.accentColor.opacity(0.12))
+            Rectangle().fill(accent.opacity(0.12))
         } else {
             GeometryReader { g in
                 LinearGradient(colors: [.clear, Color.accentColor.opacity(0.55), .clear],
