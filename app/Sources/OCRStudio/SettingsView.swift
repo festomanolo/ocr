@@ -62,12 +62,13 @@ struct GeneralSettings: View {
                 Toggle("Detect tables", isOn: $tables)
                 Toggle("Add <!-- page N --> markers", isOn: $pageMarkers)
             }
-            Section("Output") {
+            Section("Output folder") {
                 HStack {
                     Text(outputPath.isEmpty ? ConvertSettings.defaultOutput.path : outputPath)
                         .lineLimit(1).truncationMode(.head).foregroundStyle(.secondary)
                     Spacer()
                     Button("Choose…") { chooseFolder() }
+                    if !outputPath.isEmpty { Button("Reset") { outputPath = "" } }
                 }
             }
             Section("Engine") {
