@@ -82,9 +82,15 @@ Default output: `~/Documents/ocr/<file name>/` (`.md`, `.ocr.md` when AI ran, `.
   OCR text, early stop on 401/403/404. Untouched OCR saved as `.ocr.md`.
 
 **Vision layer (optional, off by default)**
-- Xiaomi-OCR-0 (0.8B, Apache-2.0) through Ollama (`longwayxu/xiaomi-ocr-0:bf16`) or any OpenAI-compatible vision
-  server. Re-reads pages with Tesseract confidence < 85% (or all). OTSL tables → Markdown. Loop/empty detection.
-  Falls back to Tesseract text on any failure. **Only tested against mock servers** (see Upcoming).
+- Xiaomi-OCR-0 (0.8B, Apache-2.0). Preferred: `--vision llamacpp` → engine starts a private `llama-server` with the
+  local Q4_K_M GGUF + mmproj (needs llama.cpp ≥ Nov 2026 for the `qwen35` arch; Ollama 0.34 cannot load it), waits for
+  /health, stops it at exit/SIGTERM. Missing binary/model → warning event `vision_unavailable`, Tesseract-only run.
+  Also Ollama (`longwayxu/xiaomi-ocr-0:bf16`) or any OpenAI-compatible vision server. Re-reads pages with Tesseract confidence < 85% (or all). OTSL tables → Markdown. Loop/empty detection.
+  Falls back to Tesseract text on any failure.
+  **Tested on the real model (Intel i5, CPU, 2 textbook scans):** reading order across columns correct, ignores
+  watermarks, no OCR errors where Tesseract garbled lines; loses bold/italic; Q4_K_M ≥ BF16 on the page compared.
+  Speed is the limit: ~160 s/page at 150 dpi, ~64 s at 100 dpi (`--vision-max-side 1200`, default) — vs ~2 s/page
+  Tesseract. So use it for low-confidence pages, not whole books, on this machine.
 
 **Mac app**
 - Drag & drop / ⌘O / Dock drop, queue, per-file page range (`1-20, 45, 60-`), Convert button (nothing auto-starts).
