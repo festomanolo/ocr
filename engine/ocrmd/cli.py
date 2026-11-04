@@ -111,6 +111,29 @@ def convert_with_markitdown(path: str) -> str:
     return MarkItDown(enable_plugins=False).convert(path).text_content
 
 
+LANG_NAMES = {"eng": "English", "swa": "Swahili", "fra": "French", "deu": "German", "spa": "Spanish",
+              "por": "Portuguese", "ita": "Italian", "ara": "Arabic", "hin": "Hindi", "rus": "Russian"}
+
+
+def refine_with_ai(res: Result, opts: Options, cfg, args, md_path: str) -> tuple:
+    """Runs the AI correction over the assembled pages. Returns (body, summary)."""
+    raw = layout.assemble(res.pages, page_markers=True)
+    chunks = aimod.split_pages(raw)
+    with open(os.path.splitext(md_path)[0] + ".ocr.md", "w", encoding="utf-8") as f:
+        f.write(aimod.join_pages(chunks, markers=opts.page_markers))      # untouched OCR, for comparison
+    kinds = {p.number: p.kind for p in res.pages}
+    conf = {p.number: p.confidence for p in res.pages}
+    t0 = time.monotonic()
+    outcomes = aimod.refine(chunks, kinds, conf, cfg, lambda e: emit(args, e))
+    counts = {s: sum(1 for o in outcomes if o.status == s) for s in ("corrected", "unchanged", "skipped", "failed")}
+    errors = [o.error for o in outcomes if o.status == "failed"]
+    if errors:
+        emit(args, {"event": "warning", "message": f"AI correction failed on {len(errors)} page(s): {errors[0]}"})
+    summary = {"provider": cfg.provider, "model": cfg.model, **counts, "first_error": errors[0] if errors else "",
+               "seconds": round(time.monotonic() - t0, 1)}
+    return aimod.join_pages([(o.page, o.text) for o in outcomes], markers=opts.page_markers), summary
+
+
 def process(path: str, out_root: str, opts: Options, args) -> dict:
     stem = re.sub(r"[^\w.\- ]+", "_", os.path.splitext(os.path.basename(path))[0]).strip() or "document"
     out_dir = os.path.join(out_root, stem)
@@ -121,6 +144,8 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
     emit(args, {"event": "file", "path": path, "out_dir": out_dir})
 
     res = Result()
+    ai_cfg = aimod.from_env(args)
+    ai_summary = None
     if ext == ".pdf":
         try:
             res = convert_pdf(path, out_dir, opts, lambda e: emit(args, e))
