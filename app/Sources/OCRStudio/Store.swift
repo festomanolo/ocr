@@ -354,6 +354,7 @@ final class JobStore: ObservableObject {
     }
 
     private func finished(id: UUID, code: Int32, tail: String) {
+        flush()                                   // apply the last batch (including "done") before the exit status
         update(id) { job in
             if case .running = job.status {
                 job.status = (code == 15 || code == 143 || code == -15) ? .cancelled
