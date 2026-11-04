@@ -196,10 +196,10 @@ def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> st
     user = build_user_message(prev_tail, protected, next_head)
     max_tokens = min(8000, max(512, int(len(protected) / 2.5) + 256))
     answer = clean_answer(chat(cfg, system, user, max_tokens))
-    problem = validate(page, answer)
+    problem = validate(protected, answer)
     if problem:
         raise AIError(problem)
-    return answer
+    return restore_figures(protected, answer, figs)
 
 
 # ── whole document ──────────────────────────────────────────────────────────
@@ -255,8 +255,8 @@ def refine(chunks: List[Tuple[int, str]], kinds: Dict[int, str], confidence: Dic
         if fatal:
             return PageOutcome(n, text, "failed", error=fatal[0])
         progress({"event": "ai_page_start", "page": n})
-        prev_tail = texts[idx - 1][-cfg.context_chars:] if idx > 0 else ""
-        next_head = texts[idx + 1][:cfg.context_chars // 2] if idx + 1 < total else ""
+        prev_tail = FIGURE_RE.sub("", texts[idx - 1])[-cfg.context_chars:].strip() if idx > 0 else ""
+        next_head = FIGURE_RE.sub("", texts[idx + 1])[:cfg.context_chars // 2].strip() if idx + 1 < total else ""
         try:
             fixed = correct_page(cfg, prev_tail, text, next_head)
             share = changed_share(text, fixed)
