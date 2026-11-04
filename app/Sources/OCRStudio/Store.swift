@@ -261,7 +261,7 @@ final class JobStore: ObservableObject {
         runs[id] = engineRun
         do {
             try engineRun.start(onEvent: { [weak self] ev, raw in
-                Task { @MainActor in self?.handle(ev, raw: raw, id: id) }
+                Task { @MainActor in self?.enqueue(ev, raw: raw, id: id) }
             }, onExit: { [weak self] code in
                 Task { @MainActor in self?.finished(id: id, code: code, tail: engineRun.tail) }
             })
