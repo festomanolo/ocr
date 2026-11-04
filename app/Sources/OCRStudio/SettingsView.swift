@@ -6,6 +6,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
+            VisionSettings().tabItem { Label("Vision OCR", systemImage: "viewfinder") }
             AISettings().tabItem { Label("AI Correction", systemImage: "sparkles") }
             EngineSettings().tabItem { Label("Engine", systemImage: "cpu") }
         }
