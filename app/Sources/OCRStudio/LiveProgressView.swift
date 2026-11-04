@@ -273,7 +273,10 @@ struct OutputPanel: View {
     @State private var follow = true
 
     private var donePages: [Int] { job.pages.filter { job.results[$0] != nil } }
-    private var running: [Int] { job.pages.filter { job.pageState[$0] == .running } }
+    private var running: [Int] {
+        job.phase == .refining ? job.pages.filter { job.aiState[$0] == .running }
+                               : job.pages.filter { job.pageState[$0] == .running }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
