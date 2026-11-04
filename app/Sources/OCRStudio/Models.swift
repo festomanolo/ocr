@@ -163,6 +163,11 @@ struct EngineEvent: Decodable {
     var conf: Double?
     var workers: Int?
     var outDir: String?
+    var status: String?
+    var reason: String?
+    var changed: Double?
+    var model: String?
+    var provider: String?
 
     enum CodingKeys: String, CodingKey {
         case event, page, kind, done, total, message, code, lang, pages, md, figures, conf, workers
