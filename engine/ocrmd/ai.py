@@ -176,6 +176,8 @@ def validate(original: str, answer: str) -> Optional[str]:
     ratio = len(answer) / max(1, len(original))
     if ratio < 0.55 or ratio > 1.45:
         return f"length changed too much ({ratio:.2f}x)"
+    if changed_share(original, answer) > MAX_CHANGED:
+        return "rewrote too much of the page"
     return None
 
 
@@ -190,8 +192,9 @@ def changed_share(a: str, b: str) -> float:
 
 def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> str:
     system = SYSTEM_PROMPT.format(languages=cfg.languages)
-    user = build_user_message(prev_tail, page, next_head)
-    max_tokens = min(8000, max(512, int(len(page) / 2.5) + 256))
+    protected, figs = protect_figures(page)
+    user = build_user_message(prev_tail, protected, next_head)
+    max_tokens = min(8000, max(512, int(len(protected) / 2.5) + 256))
     answer = clean_answer(chat(cfg, system, user, max_tokens))
     problem = validate(page, answer)
     if problem:
