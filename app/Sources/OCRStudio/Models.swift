@@ -140,6 +140,12 @@ struct EngineEvent: Decodable {
         message = try? c.decode(String.self, forKey: .message)
         code = try? c.decode(String.self, forKey: .code)
         lang = try? c.decode(String.self, forKey: .lang)
+        pages = try? c.decode([Int].self, forKey: .pages)
+        md = try? c.decode(String.self, forKey: .md)
+        figures = try? c.decode([String].self, forKey: .figures)
+        conf = try? c.decode(Double.self, forKey: .conf)
+        workers = try? c.decode(Int.self, forKey: .workers)
+        outDir = try? c.decode(String.self, forKey: .outDir)
         // "start" sends the list of scanned pages, "done" sends a count.
         if let list = try? c.decode([Int].self, forKey: .ocrPages) { ocrPageCount = list.count }
         else { ocrPageCount = try? c.decode(Int.self, forKey: .ocrPages) }
