@@ -90,7 +90,7 @@ struct JobDetailView: View {
                     Picker("", selection: $tab) {
                         ForEach(DetailTab.allCases.filter { ($0 != .figures || r.figures > 0) && ($0 != .original || r.ai != nil) }) { Text($0.rawValue).tag($0) }
                     }
-                    .pickerStyle(.segmented).labelsHidden().frame(width: 250)
+                    .pickerStyle(.segmented).labelsHidden().frame(width: r.ai != nil ? 380 : 250)
                 }
                 if !r.lowConfidencePages.isEmpty {
                     Label("Low OCR confidence on page\(r.lowConfidencePages.count == 1 ? "" : "s") \(r.lowConfidencePages.prefix(12).map(String.init).joined(separator: ", ")). Check them against the original.",
