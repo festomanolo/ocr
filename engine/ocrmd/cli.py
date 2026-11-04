@@ -258,9 +258,16 @@ def main(argv=None) -> int:
     if args.ai and not args.ai_languages:
         args.ai_languages = " and ".join(LANG_NAMES.get(l, l) for l in args.lang.split("+"))
 
+    vision_cfg = None
+    if args.vision:
+        from .vision import VisionConfig, DEFAULT_OLLAMA_MODEL, DEFAULT_SERVER_MODEL
+        vision_cfg = VisionConfig(
+            provider=args.vision, base_url=args.vision_url, api_key=os.environ.get("OCRMD_VISION_KEY", ""),
+            model=args.vision_model or (DEFAULT_OLLAMA_MODEL if args.vision == "ollama" else DEFAULT_SERVER_MODEL),
+            mode=args.vision_mode, min_conf=args.vision_min_conf, workers=max(1, args.vision_workers))
     opts = Options(ocr=args.ocr, lang=args.lang, dpi=args.dpi, figures=not args.no_figures,
                    tables=not args.no_tables, deskew=not args.no_deskew, workers=args.workers,
-                   auto_dpi=not args.no_auto_dpi,
+                   auto_dpi=not args.no_auto_dpi, vision=vision_cfg,
                    page_markers=not args.no_page_markers,
                    pages=parse_pages(args.pages) if args.pages else None)
     status = 0
