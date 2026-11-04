@@ -244,11 +244,14 @@ struct PageTile: View {
         if reduceMotion {
             Rectangle().fill(accent.opacity(0.12))
         } else {
-            GeometryReader { g in
-                LinearGradient(colors: [.clear, accent.opacity(0.55), .clear],
-                               startPoint: .top, endPoint: .bottom)
-                    .frame(height: 26)
-                    .offset(y: (g.size.height - 26) * beam)
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { ctx in
+                let t = ctx.date.timeIntervalSinceReferenceDate
+                let phase = (sin(t * 2.4) + 1) / 2                // 0…1, smooth back-and-forth
+                GeometryReader { g in
+                    LinearGradient(colors: [.clear, accent.opacity(0.55), .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 26)
+                        .offset(y: (g.size.height - 26) * phase)
+                }
             }
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .allowsHitTesting(false)
