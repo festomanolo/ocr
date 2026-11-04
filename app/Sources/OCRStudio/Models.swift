@@ -15,6 +15,15 @@ enum JobStatus: Equatable {
     }
 }
 
+enum PageState: Equatable { case pending, running, done }
+
+struct PageResult: Equatable {
+    var markdown: String
+    var kind: String            // "text" | "ocr"
+    var confidence: Double?
+    var figures: [String]
+}
+
 struct Report: Decodable, Equatable {
     var markdown: String
     var preview: String?
