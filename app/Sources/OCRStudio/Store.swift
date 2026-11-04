@@ -272,6 +272,27 @@ final class JobStore: ObservableObject {
         }
     }
 
+    /// Engine events can arrive dozens per second (several pages finish at once); applying each one
+    /// separately makes SwiftUI re-lay-out the whole live view every time. Batch them instead.
+    private var pending: [(UUID, EngineEvent, Data)] = []
+    private var flushScheduled = false
+
+    private func enqueue(_ ev: EngineEvent, raw: Data, id: UUID) {
+        pending.append((id, ev, raw))
+        guard !flushScheduled else { return }
+        flushScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.flush() }
+    }
+
+    private func flush() {
+        flushScheduled = false
+        let batch = pending
+        pending = []
+        var jobsCopy = jobs                      // one @Published assignment per batch, not one per event
+        swap(&jobsCopy, &jobs)
+        for (id, ev, raw) in batch { handle(ev, raw: raw, id: id) }
+    }
+
     private func handle(_ ev: EngineEvent, raw: Data, id: UUID) {
         switch ev.event {
         case "file":
