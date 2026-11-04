@@ -203,20 +203,11 @@ struct PageTile: View {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .strokeBorder(active ? accent : Color.primary.opacity(0.08), lineWidth: active ? 2 : 1)
             }
-            .overlay(alignment: .bottomTrailing) {
-                if state == .done {
-                    Image(systemName: "checkmark.circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .green)
-                        .font(.system(size: 17))
-                        .background(Circle().fill(.background).padding(2))
-                        .offset(x: 5, y: 5)
-                        .transition(.scale(scale: 0.2).combined(with: .opacity))
-                }
-            }
-            .shadow(color: state == .running ? Color.accentColor.opacity(0.35) : .clear, radius: 8, y: 2)
-            .scaleEffect(state == .running ? 1.05 : 1)
+            .overlay(alignment: .bottomTrailing) { badge }
+            .shadow(color: active ? accent.opacity(0.35) : .clear, radius: 8, y: 2)
+            .scaleEffect(active ? 1.05 : 1)
             .animation(.spring(response: 0.45, dampingFraction: 0.7), value: state)
+            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: ai)
 
             HStack(spacing: 3) {
                 Text("\(number)").monospacedDigit()
