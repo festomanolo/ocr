@@ -272,6 +272,10 @@ final class JobStore: ObservableObject {
             args += ["--pages", range]
         }
         var env: [String: String] = [:]
+        args += settings.visionArguments
+        if settings.visionEnabled, settings.visionProvider == "openai", let k = Keychain.read("vision"), !k.isEmpty {
+            env["OCRMD_VISION_KEY"] = k
+        }
         if job.useAI && settings.aiReady {
             args += settings.aiArguments
             if settings.aiProvider == "openrouter" { env["OCRMD_AI_KEY"] = Keychain.read("openrouter") ?? "" }
