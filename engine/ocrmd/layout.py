@@ -184,11 +184,13 @@ def strip_running(pages: List[Page], band: float = 0.11, header_band: float = 0.
         for b in p.blocks:
             if b.kind != "text" or not b.lines:
                 continue
-            if b.bbox[3] < p.height * band or b.bbox[1] > p.height * (1 - band):
+            if b.bbox[3] < p.height * header_band or b.bbox[1] > p.height * (1 - header_band):
                 k = _key(b.text)
                 edge.append((p, b, k))
-                counts[k] = counts.get(k, 0) + 1
+                seen_on.setdefault(k, set()).add(p.number)
+    counts = {k: len(v) for k, v in seen_on.items()}
     limit = max(2, int(len(pages) * 0.35)) if len(pages) >= 3 else 10 ** 9
+
     drop = set()
     for p, b, k in edge:
         if PAGE_NUMBER_RE.match(b.text) or (counts[k] >= limit and k.replace("#", "").strip()):
