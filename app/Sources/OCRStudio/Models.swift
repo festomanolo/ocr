@@ -17,6 +17,32 @@ enum JobStatus: Equatable {
 
 enum PageState: Equatable { case pending, running, done }
 
+/// Outcome of the optional AI correction for one page.
+enum AIState: Equatable {
+    case running
+    case corrected(Double)      // share of words changed
+    case unchanged
+    case skipped(String)
+    case failed(String)
+}
+
+enum Phase: Equatable { case reading, refining }
+
+struct AIReport: Decodable, Equatable {
+    var provider: String
+    var model: String
+    var corrected: Int
+    var unchanged: Int
+    var skipped: Int
+    var failed: Int
+    var firstError: String
+    var seconds: Double
+    enum CodingKeys: String, CodingKey {
+        case provider, model, corrected, unchanged, skipped, failed, seconds
+        case firstError = "first_error"
+    }
+}
+
 struct PageResult: Equatable {
     var markdown: String
     var kind: String            // "text" | "ocr"
