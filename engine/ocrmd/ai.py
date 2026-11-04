@@ -141,12 +141,38 @@ def clean_answer(text: str) -> str:
     return t
 
 
+def protect_figures(text: str) -> Tuple[str, List[str]]:
+    """Figure lines never reach the model: they are swapped for ⟦FIGn⟧ tokens and restored afterwards."""
+    figs: List[str] = []
+
+    def sub(m):
+        figs.append(m.group(0).strip())
+        return f"⟦FIG{len(figs)}⟧"
+    return FIGURE_RE.sub(sub, text), figs
+
+
+def restore_figures(original_tokenised: str, answer: str, figs: List[str]) -> str:
+    for i, line in enumerate(figs, start=1):
+        tok = f"⟦FIG{i}⟧"
+        if tok in answer:
+            answer = answer.replace(tok, line, 1)
+            continue
+        # The model dropped it: put it back at the same relative position.
+        orig_lines = original_tokenised.split("\n")
+        pos = next((n for n, l in enumerate(orig_lines) if tok in l), 0) / max(1, len(orig_lines))
+        a_lines = answer.split("\n")
+        a_lines.insert(min(len(a_lines), round(pos * len(a_lines))), "\n" + line + "\n")
+        answer = "\n".join(a_lines)
+    return re.sub(r"\n{3,}", "\n\n", answer).strip()
+
+
+MAX_CHANGED = 0.45          # a page where more than this share of the words differ was rewritten, not corrected
+
+
 def validate(original: str, answer: str) -> Optional[str]:
     """Returns a reason if the answer must be rejected."""
     if not answer.strip():
         return "empty answer"
-    if sorted(FIGURE_RE.findall(original)) != sorted(FIGURE_RE.findall(answer)):
-        return "figure lines were altered"
     ratio = len(answer) / max(1, len(original))
     if ratio < 0.55 or ratio > 1.45:
         return f"length changed too much ({ratio:.2f}x)"
