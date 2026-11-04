@@ -68,7 +68,7 @@ struct Report: Decodable, Equatable {
     var ai: AIReport?
 
     enum CodingKeys: String, CodingKey {
-        case markdown, preview, method, pages, figures, tables, words, seconds
+        case markdown, preview, method, pages, figures, tables, words, seconds, ai
         case outDir = "out_dir"
         case textPages = "text_pages"
         case ocrPages = "ocr_pages"
@@ -97,6 +97,16 @@ struct Job: Identifiable, Equatable {
     var workers = 0
     var startedAt: Date?
     var outDir: String?
+    // AI correction
+    var useAI = false
+    var phase: Phase = .reading
+    var aiTotal = 0
+    var aiDone = 0
+    var aiModel = ""
+    var aiProvider = ""
+    var aiWorkers = 0
+    var aiStartedAt: Date?
+    var aiState: [Int: AIState] = [:]
     var pageCount: Int?
 
     init(url: URL) {
