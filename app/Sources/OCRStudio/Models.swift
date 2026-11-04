@@ -74,6 +74,8 @@ struct Report: Decodable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case markdown, preview, method, pages, figures, tables, words, seconds, ai
+        case visionPages = "vision_pages"
+        case visionModel = "vision_model"
         case outDir = "out_dir"
         case textPages = "text_pages"
         case ocrPages = "ocr_pages"
