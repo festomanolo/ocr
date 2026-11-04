@@ -84,6 +84,9 @@ struct JobDetailView: View {
                                 Chip(icon: "checkmark.seal", text: "OCR \(Int(c))%", tint: c >= 80 ? .green : (c >= 60 ? .orange : .red))
                             }
                             Chip(icon: "text.word.spacing", text: "\(r.words.formatted()) words")
+                            if let v = r.visionPages, !v.isEmpty {
+                                Chip(icon: "viewfinder", text: "Vision · \(v.count) page\(v.count == 1 ? "" : "s")", tint: .indigo)
+                            }
                             if let ai = r.ai {
                                 Chip(icon: "sparkles", text: "AI · \(ai.corrected) corrected" + (ai.failed > 0 ? " · \(ai.failed) kept" : ""),
                                      tint: ai.failed > 0 ? .orange : .purple)
