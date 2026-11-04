@@ -125,7 +125,8 @@ struct EngineEvent: Decodable {
     var outDir: String?
 
     enum CodingKeys: String, CodingKey {
-        case event, page, kind, done, total, message, code, lang
+        case event, page, kind, done, total, message, code, lang, pages, md, figures, conf, workers
+        case outDir = "out_dir"
         case ocrPages = "ocr_pages"
     }
 
