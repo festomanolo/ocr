@@ -255,7 +255,7 @@ struct PageTile: View {
             Rectangle().fill(accent.opacity(0.12))
         } else {
             GeometryReader { g in
-                LinearGradient(colors: [.clear, Color.accentColor.opacity(0.55), .clear],
+                LinearGradient(colors: [.clear, accent.opacity(0.55), .clear],
                                startPoint: .top, endPoint: .bottom)
                     .frame(height: 26)
                     .offset(y: (g.size.height - 26) * beam)
