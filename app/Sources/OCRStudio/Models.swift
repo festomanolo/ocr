@@ -181,7 +181,7 @@ struct EngineEvent: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case event, page, kind, done, total, message, code, lang, pages, md, figures, conf, workers
-        case status, reason, changed, kept, model, provider
+        case status, reason, changed, kept, model, provider, engine
         case outDir = "out_dir"
         case ocrPages = "ocr_pages"
     }
@@ -206,6 +206,7 @@ struct EngineEvent: Decodable {
         reason = try? c.decode(String.self, forKey: .reason)
         changed = try? c.decode(Double.self, forKey: .changed)
         kept = try? c.decode(Int.self, forKey: .kept)
+        engine = try? c.decode(String.self, forKey: .engine)
         model = try? c.decode(String.self, forKey: .model)
         provider = try? c.decode(String.self, forKey: .provider)
         // "start" sends the list of scanned pages, "done" sends a count.
