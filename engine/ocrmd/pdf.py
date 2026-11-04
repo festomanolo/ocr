@@ -450,6 +450,7 @@ def convert_image(path: str, out_dir: str, opts: Options, progress: Progress = l
             frames.append(img.convert("RGB").copy())
     except EOFError:
         pass
+    progress({"event": "start", "total": len(frames), "pages": list(range(1, len(frames) + 1)),
     progress({"event": "start", "total": len(frames), "ocr_pages": list(range(1, len(frames) + 1)), "lang": lang})
     counters = {"figures": 0, "tables": 0}
     pages = []
