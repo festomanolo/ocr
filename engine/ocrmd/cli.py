@@ -14,6 +14,7 @@ import signal
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List
 
 from . import __version__, ai as aimod, layout, tess
