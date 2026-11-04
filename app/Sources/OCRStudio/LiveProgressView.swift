@@ -201,8 +201,7 @@ struct PageTile: View {
             .aspectRatio(0.72, contentMode: .fit)
             .overlay {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(state == .running ? Color.accentColor : Color.primary.opacity(0.08),
-                                  lineWidth: state == .running ? 2 : 1)
+                    .strokeBorder(active ? accent : Color.primary.opacity(0.08), lineWidth: active ? 2 : 1)
             }
             .overlay(alignment: .bottomTrailing) {
                 if state == .done {
