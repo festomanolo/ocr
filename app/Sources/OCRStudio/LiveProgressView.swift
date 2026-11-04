@@ -148,7 +148,7 @@ struct PagesPanel: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 78, maximum: 104), spacing: 12)], spacing: 14) {
                         ForEach(job.pages, id: \.self) { n in
                             PageTile(number: n, state: job.pageState[n] ?? .pending,
-                                     result: job.results[n], thumbs: thumbs)
+                                     result: job.results[n], ai: job.aiState[n], thumbs: thumbs)
                                 .id(n)
                         }
                     }
