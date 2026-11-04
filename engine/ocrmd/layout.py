@@ -439,6 +439,8 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
         return [Item("figure", text, page.number)]
     if block.kind == "table":
         return [Item("table", render_table(block.rows), page.number)]
+    if block.kind == "raw":
+        return [Item("raw", block.raw, page.number)]
 
     items: List[Item] = []
     lines = [l for l in block.lines if l.text]
