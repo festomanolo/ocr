@@ -91,8 +91,8 @@ def test_context_from_neighbour_pages_is_sent():
     assert "<next_page_start>" in second and "Last page here." in second
 
 
-def test_changed_figure_line_is_rejected_and_original_kept():
-    m = Mock(lambda user: (200, page_of(user).replace("![Figure](figures/a.jpg)", "")))
+def test_figure_lines_never_reach_the_model_and_are_restored_even_if_dropped():
+    m = Mock(lambda user: (200, page_of(user).replace("⟦FIG1⟧", "")))      # model drops the token
     try:
         out = ai.refine(CHUNKS[:1], KINDS, {}, cfg(m))
     finally:
