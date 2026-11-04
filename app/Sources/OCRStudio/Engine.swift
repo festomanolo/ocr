@@ -34,13 +34,15 @@ enum Engine {
         if let env = ProcessInfo.processInfo.environment["OCRSTUDIO_PYTHON"] {
             return URL(fileURLWithPath: env)
         }
-        if fm.isExecutableFile(atPath: venvPython.path) { return venvPython }
+        // First interpreter that can really import the engine's packages (an empty venv is skipped).
+        var candidates: [URL] = []
+        if fm.isExecutableFile(atPath: venvPython.path) { candidates.append(venvPython) }
         if let dir = engineDir() {
             let dev = dir.deletingLastPathComponent().appendingPathComponent(".venv/bin/python")
-            if fm.isExecutableFile(atPath: dev.path) { return dev }
+            if fm.isExecutableFile(atPath: dev.path) { candidates.append(dev) }
         }
-        // Reuse an already-installed Python that has the engine's packages: no second install.
-        return systemPythons().first(where: hasPackages)
+        candidates += systemPythons()
+        return candidates.first(where: hasPackages)
     }
 
     private static var packageCache: [String: Bool] = [:]
