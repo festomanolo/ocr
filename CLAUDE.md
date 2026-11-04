@@ -38,6 +38,7 @@ app/Sources/OCRStudio/   SwiftUI app (macOS 13+, Swift Package, no Xcode project
   SettingsView.swift       General / Vision OCR / AI Correction / Engine tabs
   Keychain.swift, AIService.swift, ContentView.swift, SidebarView.swift, OCRStudioApp.swift
 tests/          pytest (46 tests); make_fixtures.py builds digital + scanned PDFs
+models/         gitignored: llama.cpp/bin/ (llama-server built from source, CPU) + xiaomi-ocr-0/ (Q4_K_M, BF16, mmproj GGUFs)
 scripts/        build_app.sh (→ dist/OCR Studio.app), make_icon.py
 ```
 
