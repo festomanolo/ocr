@@ -198,6 +198,7 @@ def main(argv=None) -> int:
 
     opts = Options(ocr=args.ocr, lang=args.lang, dpi=args.dpi, figures=not args.no_figures,
                    tables=not args.no_tables, deskew=not args.no_deskew, workers=args.workers,
+                   auto_dpi=not args.no_auto_dpi,
                    page_markers=not args.no_page_markers,
                    pages=parse_pages(args.pages) if args.pages else None)
     status = 0
