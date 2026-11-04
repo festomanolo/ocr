@@ -264,7 +264,6 @@ final class JobStore: ObservableObject {
         } catch {
             runs[id] = nil
             update(id) { $0.status = .failed(error.localizedDescription) }
-            pumping = false
             pump()
         }
     }
@@ -292,6 +291,28 @@ final class JobStore: ObservableObject {
                         $0.results[p] = PageResult(markdown: ev.md ?? "", kind: ev.kind ?? "text",
                                                    confidence: ev.conf, figures: ev.figures ?? [])
                     }
+                }
+            }
+        case "ai_start":
+            update(id) {
+                $0.phase = .refining; $0.aiTotal = ev.total ?? 0; $0.aiDone = 0; $0.aiStartedAt = Date()
+                $0.aiWorkers = ev.workers ?? 0; $0.aiModel = ev.model ?? $0.aiModel; $0.aiProvider = ev.provider ?? $0.aiProvider
+                $0.aiState = [:]
+            }
+        case "ai_page_start":
+            if let p = ev.page { update(id) { $0.aiState[p] = .running } }
+        case "ai_page":
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                update(id) {
+                    guard let p = ev.page else { return }
+                    switch ev.status ?? "" {
+                    case "corrected": $0.aiState[p] = .corrected(ev.changed ?? 0)
+                    case "unchanged": $0.aiState[p] = .unchanged
+                    case "skipped": $0.aiState[p] = .skipped(ev.reason ?? "")
+                    default: $0.aiState[p] = .failed(ev.reason ?? "")
+                    }
+                    if let md = ev.md, var r = $0.results[p], ev.status != "failed" { r.markdown = md; $0.results[p] = r }
+                    $0.aiDone = max($0.aiDone, ev.done ?? 0)
                 }
             }
         case "warning":
