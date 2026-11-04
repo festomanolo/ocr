@@ -398,8 +398,8 @@ def fmt_spans(spans: Sequence[Span]) -> str:
     return re.sub(r"\s+", " ", "".join(out)).strip()
 
 
-def join_lines(parts: List[str]) -> str:
-    """Joins wrapped lines, repairing hyphenation (exam-\\nple → example)."""
+def join_lines(parts: List[str], vocab: Optional["Vocab"] = None) -> str:
+    """Joins wrapped lines, repairing hyphenation (exam-\\nple → example, but high-\\nimpact stays)."""
     out = ""
     for part in parts:
         part = part.strip()
@@ -408,7 +408,12 @@ def join_lines(parts: List[str]) -> str:
         if not out:
             out = part
         elif re.search(r"[A-Za-z]{2}-$", out) and re.match(r"[a-z]", part):
-            out = out[:-1] + part
+            left = re.search(r"([A-Za-z]+)-$", out).group(1)
+            right = re.match(r"[a-z]+", part).group(0)
+            if vocab is not None and vocab.keep_hyphen(left, right):
+                out += part                                  # real compound: keep the hyphen
+            else:
+                out = out[:-1] + part
         else:
             out += " " + part
     return out
