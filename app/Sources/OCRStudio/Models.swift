@@ -117,7 +117,10 @@ struct Job: Identifiable, Equatable {
     var name: String { url.lastPathComponent }
     var isPDF: Bool { url.pathExtension.lowercased() == "pdf" }
     var rangeIsValid: Bool { PageRange.parse(pageRange, max: pageCount) != nil }
-    var fraction: Double { total > 0 ? Double(done) / Double(total) : 0 }
+    var fraction: Double {
+        if phase == .refining { return aiTotal > 0 ? Double(aiDone) / Double(aiTotal) : 1 }
+        return total > 0 ? Double(done) / Double(total) : 0
+    }
     var isFinished: Bool {
         switch status { case .done, .failed, .cancelled: return true; default: return false }
     }
