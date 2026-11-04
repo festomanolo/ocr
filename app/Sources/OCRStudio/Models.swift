@@ -109,6 +109,7 @@ struct Job: Identifiable, Equatable {
     var aiWorkers = 0
     var aiStartedAt: Date?
     var aiState: [Int: AIState] = [:]
+    var aiKept: [Int: Int] = [:]
     var pageCount: Int?
 
     init(url: URL) {
