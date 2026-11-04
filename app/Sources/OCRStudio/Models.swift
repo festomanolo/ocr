@@ -199,6 +199,7 @@ struct EngineEvent: Decodable {
         status = try? c.decode(String.self, forKey: .status)
         reason = try? c.decode(String.self, forKey: .reason)
         changed = try? c.decode(Double.self, forKey: .changed)
+        kept = try? c.decode(Int.self, forKey: .kept)
         model = try? c.decode(String.self, forKey: .model)
         provider = try? c.decode(String.self, forKey: .provider)
         // "start" sends the list of scanned pages, "done" sends a count.
