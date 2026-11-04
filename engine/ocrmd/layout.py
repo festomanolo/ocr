@@ -505,7 +505,8 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
                 prev_short = (prev.bbox[2] - prev.bbox[0]) < 0.72 * max_w
                 if prev_short and prev.text.endswith((".", "!", "?", ":", '"', "”", ")")) and text[:1].isupper():
                     new_para = True
-            if cur_kind == "heading" or starts_item or new_para:
+            label_break = line.starts_with_label and not starts_item and bool(cur)   # "ISSUED BY: …" lines
+            if cur_kind == "heading" or starts_item or new_para or label_break:
                 flush()
             if starts_item:
                 marker = "-" if m_b else m_n.group(1)
@@ -539,7 +540,19 @@ def assemble(pages: List[Page], page_markers: bool = True) -> str:
     """Pages → one Markdown string (reading order, headings, cross-page paragraph joins)."""
     styler = Styler(pages)
     items: List[Item] = []
+    ends_sentence = re.compile(r"[.!?:;\"”)\]`]\**$")
+
+    def stitch(prev: Item, nxt: Item, across_page: bool) -> bool:
+        """A paragraph/list item that was cut by a block or page boundary continues in the next paragraph."""
+        if prev.kind not in ("para", "list") or nxt.kind != "para" or ends_sentence.search(prev.text):
+            return False
+        starts_lower = bool(re.match(r"[\*_`\[]*[a-z]", nxt.text))
+        return starts_lower or across_page            # at a page break any non-heading paragraph continues
+
     for p in pages:
+        raw_items: List[Item] = []
+        for b in p.blocks:
+            raw_items.extend(block_items(p, b, styler))
         page_items: List[Item] = []
         for b in p.blocks:
             page_items.extend(block_items(p, b, styler))
