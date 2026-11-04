@@ -97,7 +97,27 @@ def test_figure_lines_never_reach_the_model_and_are_restored_even_if_dropped():
         out = ai.refine(CHUNKS[:1], KINDS, {}, cfg(m))
     finally:
         m.close()
-    assert out[0].status == "failed" and "figure" in out[0].error and out[0].text == CHUNKS[0][1]
+    assert "figures/a.jpg" not in m.prompts[0]                              # path never sent
+    assert "![Figure](figures/a.jpg)" in out[0].text and out[0].status != "failed"
+
+
+def test_leaked_context_tags_are_removed():
+    m = Mock(lambda user: (200, page_of(user) + "\n</page>\n\n<next_page_start>\nLast page here."))
+    try:
+        out = ai.refine(CHUNKS[1:2], KINDS, {}, cfg(m))
+    finally:
+        m.close()
+    assert "next_page_start" not in out[0].text and "</page>" not in out[0].text and "Last page here" not in out[0].text
+
+
+def test_heavy_rewrite_is_rejected():
+    original = "The cell has a nucleus and the nucleus holds the genes of the cell and controls it."
+    m = Mock(lambda user: (200, "Mitochondria generate power for every living organism in biology class today and more."))
+    try:
+        out = ai.refine([(1, original)], {1: "ocr"}, {}, cfg(m))
+    finally:
+        m.close()
+    assert out[0].status == "failed" and "rewrote" in out[0].error and out[0].text == original
 
 
 def test_wholesale_rewrite_is_rejected():
