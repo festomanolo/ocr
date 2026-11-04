@@ -254,7 +254,7 @@ final class JobStore: ObservableObject {
             showSetup = true
             return
         }
-        run = engineRun
+        runs[id] = engineRun
         do {
             try engineRun.start(onEvent: { [weak self] ev, raw in
                 Task { @MainActor in self?.handle(ev, raw: raw, id: id) }
@@ -262,6 +262,7 @@ final class JobStore: ObservableObject {
                 Task { @MainActor in self?.finished(id: id, code: code, tail: engineRun.tail) }
             })
         } catch {
+            runs[id] = nil
             update(id) { $0.status = .failed(error.localizedDescription) }
             pumping = false
             pump()
