@@ -451,7 +451,7 @@ def convert_image(path: str, out_dir: str, opts: Options, progress: Progress = l
     except EOFError:
         pass
     progress({"event": "start", "total": len(frames), "pages": list(range(1, len(frames) + 1)),
-    progress({"event": "start", "total": len(frames), "ocr_pages": list(range(1, len(frames) + 1)), "lang": lang})
+              "ocr_pages": list(range(1, len(frames) + 1)), "lang": lang, "workers": 1})
     counters = {"figures": 0, "tables": 0}
     pages = []
     with tempfile.TemporaryDirectory(prefix="ocrmd-") as tmp:
