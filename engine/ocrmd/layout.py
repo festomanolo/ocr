@@ -74,6 +74,7 @@ class Block:
     bbox: Box
     lines: List[Line] = field(default_factory=list)
     rows: List[List[str]] = field(default_factory=list)   # table
+    raw: str = ""                   # ready-made Markdown (from the vision layer)
     image: str = ""                 # figure path relative to the markdown file
     caption: str = ""
     alt: str = ""
