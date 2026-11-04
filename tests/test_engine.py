@@ -97,7 +97,7 @@ def test_deskew_finds_tilt(fixtures):
     assert 1.0 <= abs(angle) <= 2.0      # fixture is tilted 1.5°
 
 
-def simulate_tesseract(monkeypatch, source_pdf):
+def simulate_tesseract(monkeypatch, source_pdf, conf=92.0):
     """Replace Tesseract with the original text layer, scaled to the render DPI."""
     src = fitz.open(source_pdf)
     state = {"page": 0}
