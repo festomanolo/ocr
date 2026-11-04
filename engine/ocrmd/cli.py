@@ -113,6 +113,39 @@ def convert_with_markitdown(path: str) -> str:
     return MarkItDown(enable_plugins=False).convert(path).text_content
 
 
+def start_llamacpp(args):
+    """--vision llamacpp: starts a private llama-server for Xiaomi-OCR-0. Returns (VisionConfig, server) or
+    (None, None) with a warning event when it is not set up or fails to start (the run then uses Tesseract only)."""
+    from . import llamaserver
+    from .vision import VisionConfig
+    found = llamaserver.availability(args.llama_server, args.vision_gguf, args.vision_mmproj)
+    if not found["ready"]:
+        missing = [k for k, label in (("server", "llama-server"), ("model", "model GGUF"), ("mmproj", "mmproj GGUF"))
+                   if not found[k]]
+        emit(args, {"event": "warning", "code": "vision_unavailable",
+                    "message": f"Vision layer skipped (missing {', '.join(missing)}); using Tesseract only."})
+        return None, None
+    srv = llamaserver.LlamaServer(Path(found["server"]), Path(found["model"]), Path(found["mmproj"]),
+                                  threads=args.vision_threads)
+    emit(args, {"event": "vision_starting", "model": Path(found["model"]).name})
+    try:
+        srv.start()
+    except llamaserver.ServerError as e:
+        emit(args, {"event": "warning", "code": "vision_unavailable",
+                    "message": f"Vision layer skipped ({e}); using Tesseract only."})
+        return None, None
+    emit(args, {"event": "vision_ready", "url": srv.base_url})
+    # The app stops a run with SIGTERM: turn it into a normal exit so the server is shut down too.
+    def _terminate(*_):
+        srv.stop()                      # kills llama-server first so any page request in flight fails fast
+        sys.exit(143)
+    signal.signal(signal.SIGTERM, _terminate)
+    cfg = VisionConfig(provider="openai", model=llamaserver.MODEL_NAME, base_url=srv.base_url,
+                       mode=args.vision_mode, min_conf=args.vision_min_conf,
+                       workers=max(1, args.vision_workers), max_side=args.vision_max_side)
+    return cfg, srv
+
+
 def vision_defaults():
     from . import vision as v
     return v.DEFAULT_OLLAMA_MODEL, v.DEFAULT_SERVER_MODEL
