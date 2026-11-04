@@ -400,7 +400,7 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
     for n in wanted:
         if kinds[n] == "text":
             pages[n] = extract_text_page(doc[n - 1], n, fig_dir, opts, counters)
-            tick(n, "text")
+            tick(n, "text", pages[n])
 
     if ocr_list:
         render_lock = threading.Lock()               # PyMuPDF documents are not thread-safe
