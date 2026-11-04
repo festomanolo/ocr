@@ -409,7 +409,8 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
                 with lock:
                     progress({"event": "page_start", "page": n})
                 with render_lock:
-                    pix = doc[n - 1].get_pixmap(dpi=opts.dpi, alpha=False)
+                    dpi = render_dpi(doc[n - 1], opts)
+                    pix = doc[n - 1].get_pixmap(dpi=dpi, alpha=False)
                     rgb = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
                 local = {"figures": 0, "tables": 0}
                 pg = ocr_page_image(rgb, n, fig_dir, tmp, opts, lang, local)
