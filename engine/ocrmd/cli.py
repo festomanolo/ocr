@@ -162,7 +162,11 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
             res = Result()
     elif ext in IMAGE_EXTS:
         res = convert_image(path, out_dir, opts, lambda e: emit(args, e))
-        body, method = layout.assemble(res.pages, page_markers=opts.page_markers), "tesseract"
+        if ai_cfg and res.pages:
+            body, ai_summary = refine_with_ai(res, opts, ai_cfg, args, md_path)
+        else:
+            body = layout.assemble(res.pages, page_markers=opts.page_markers)
+        method = "tesseract"
     else:
         emit(args, {"event": "start", "total": 1, "pages": [1], "ocr_pages": [], "lang": ""})
         body, method = convert_with_markitdown(path), "markitdown"
@@ -181,6 +185,7 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
         "avg_confidence": round(sum(conf) / len(conf), 1) if conf else None,
         "low_confidence_pages": res.low_confidence,
         "words": len(body.split()), "seconds": seconds,
+        "ai": ai_summary,
     }
     with open(os.path.join(out_dir, "report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
