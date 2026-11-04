@@ -192,8 +192,10 @@ def strip_running(pages: List[Page], band: float = 0.11, header_band: float = 0.
     limit = max(2, int(len(pages) * 0.35)) if len(pages) >= 3 else 10 ** 9
 
     drop = set()
+    kept_title: set = set()
     for p, b, k in edge:
-        if PAGE_NUMBER_RE.match(b.text) or (counts[k] >= limit and k.replace("#", "").strip()):
+        near_edge = b.bbox[3] < p.height * band or b.bbox[1] > p.height * (1 - band)
+        if near_edge and PAGE_NUMBER_RE.match(b.text):
             drop.add(id(b))
     for p in pages:
         before = len(p.blocks)
