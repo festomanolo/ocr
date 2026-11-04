@@ -480,9 +480,9 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
         level = styler.level(page, line)
         if level and page.kind == "ocr" and len(lines) > 2:   # inside a paragraph: just a tall line
             level = 0
-        if not level and single and line.all_bold and len(text.split()) <= 10 \
-                and not text.endswith((".", ",", ";")):
-            level = 4
+        if not level and line.all_bold and not text.endswith((".", ",", ";", ":")) \
+                and ((single and len(text.split()) <= 10) or idx in bold_title_lines):
+            level = styler.bold_level
         if not level and single and KEYWORD_HEADING_RE.match(text):
             level = 2
         if not level and single and 1 <= len(text.split()) <= 7 and 4 <= len(text) <= 60 \
@@ -497,7 +497,7 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
                 flush()
                 cur, cur_kind, cur_level = [esc(text)], "heading", level
         else:
-            body = fmt_spans(line.spans) if any(s.bold or s.italic for s in line.spans) else esc(text)
+            body = fmt_spans(line.spans) if any(s.bold or s.italic or s.mono or s.href for s in line.spans) else esc(text)
             m_b, m_n = BULLET_RE.match(text), NUMBER_RE.match(text)
             starts_item = bool(m_b or m_n)
             new_para = False
