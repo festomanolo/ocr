@@ -367,7 +367,9 @@ struct PageCard: View {
                     Chip(icon: "checkmark.seal", text: "\(Int(c))%", tint: c >= 80 ? .green : (c >= 60 ? .orange : .red))
                 }
                 switch ai {
-                case .corrected(let share)?: Chip(icon: "sparkles", text: "AI edited \(max(1, Int((share * 100).rounded())))%", tint: .purple)
+                case .corrected(let share)?:
+                    Chip(icon: "sparkles", text: "AI edited \(max(1, Int((share * 100).rounded())))%"
+                         + (kept > 0 ? " · \(kept) passage\(kept == 1 ? "" : "s") kept" : ""), tint: kept > 0 ? .orange : .purple)
                 case .unchanged?: Chip(icon: "sparkles", text: "AI: no changes needed", tint: .secondary)
                 case .failed(let why)?: Chip(icon: "exclamationmark.triangle", text: "AI kept original · \(why)", tint: .orange)
                 default: EmptyView()
