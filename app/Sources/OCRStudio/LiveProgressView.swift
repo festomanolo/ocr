@@ -92,6 +92,31 @@ struct ProgressHeader: View {
     }
 }
 
+/// "① Read pages → ② Refine with AI" progress steps.
+struct PhaseSteps: View {
+    let job: Job
+    var body: some View {
+        HStack(spacing: 8) {
+            step("Read pages", "doc.text.viewfinder", done: job.phase == .refining, active: job.phase == .reading)
+            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+            step("Refine with AI", "sparkles", done: false, active: job.phase == .refining)
+            Spacer()
+        }
+        .font(.caption)
+    }
+
+    private func step(_ title: String, _ icon: String, done: Bool, active: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: done ? "checkmark.circle.fill" : icon)
+            Text(title)
+        }
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(active ? Color.accentColor.opacity(0.15) : Color.clear, in: Capsule())
+        .foregroundStyle(done ? Color.green : (active ? Color.primary : Color.secondary))
+        .animation(.easeInOut(duration: 0.3), value: active)
+    }
+}
+
 struct Stat: View {
     let icon: String
     let text: String
