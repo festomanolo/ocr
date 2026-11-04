@@ -86,7 +86,7 @@ enum Engine {
         return env
     }
 
-    static func makeProcess(args: [String]) -> Process? {
+    static func makeProcess(args: [String], extraEnv: [String: String] = [:]) -> Process? {
         guard let py = python(), let dir = engineDir() else { return nil }
         let p = Process()
         p.executableURL = py
