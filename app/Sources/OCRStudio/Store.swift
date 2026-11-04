@@ -211,7 +211,7 @@ final class JobStore: ObservableObject {
     func stop() {
         started = false
         for i in jobs.indices where jobs[i].status == .queued { jobs[i].status = .cancelled }
-        run?.cancel()
+        runs.values.forEach { $0.cancel() }
     }
 
     func retry(_ id: UUID) {
@@ -226,9 +226,10 @@ final class JobStore: ObservableObject {
     }
 
     private func pump() {
-        guard started, !pumping, let next = jobs.first(where: { $0.status == .queued }) else {
-            if !hasQueued && !isBusy { started = false }
-            return
+        guard started else { return }
+        let settings = ConvertSettings.load()
+        while runs.count < concurrency(settings), let next = jobs.first(where: { $0.status == .queued }) {
+            launch(next, settings)
         }
         pumping = true
         let settings = ConvertSettings.load()
