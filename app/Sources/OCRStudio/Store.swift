@@ -42,6 +42,8 @@ struct ConvertSettings {
         if !tables { a.append("--no-tables") }
         if !pageMarkers { a.append("--no-page-markers") }
         if !deskew { a.append("--no-deskew") }
+        if !autoDPI { a.append("--no-auto-dpi") }
+        if workers > 0 { a += ["--workers", String(workers)] }
         return a
     }
 }
