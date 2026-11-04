@@ -46,6 +46,7 @@ struct AIReport: Decodable, Equatable {
 }
 
 struct PageResult: Equatable {
+    var vision = false          // re-read by the vision model
     var markdown: String
     var kind: String            // "text" | "ocr"
     var confidence: Double?
