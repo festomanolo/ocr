@@ -42,6 +42,23 @@ Hyperlinks become Markdown links, Symbol/Wingdings bullets become real lists, mo
 `code`, `LABEL:` lines keep their own lines, bold section titles become headings, a repeated title block is
 kept once, and watermarks or boxes drawn behind text are never mistaken for figures.
 
+## Reading layers
+
+| Layer | What | When |
+|---|---|---|
+| 1. Text layer / Tesseract | exact text for digital PDFs; OCR with positions, confidence and figure crops for scans | always |
+| 2. **Vision model** (optional) | whole-page reading by a document vision-language model — [Xiaomi-OCR-0](https://huggingface.co/xiaomi-research/Xiaomi-OCR-0) (0.8B, Apache-2.0) via Ollama, or any OpenAI-compatible vision server (vLLM/SGLang) | pages Tesseract was unsure about (default < 85%), or every scanned page |
+| 3. **AI text correction** (optional) | text-only LLM repairs the remaining OCR mistakes using neighbouring pages | after reading |
+
+The vision layer sends each page image to the model with the model card's prompt, converts its OTSL tables to
+Markdown tables, keeps the layer-1 figures at their positions, and falls back to the Tesseract text if the model
+is missing, slow or loops. Enable it in **Settings → Vision OCR** or with
+`--vision ollama --vision-model longwayxu/xiaomi-ocr-0:bf16 --vision-mode low-confidence`.
+
+Design notes from studying PDFelement (its OCR is the commercial ABBYY FineReader Engine, which cannot be reused):
+OCR runs in a separate process (here: the Python engine), pages are classified before recognition, and the
+product's headline feature is *searchable PDF* output — a good candidate for a future export option.
+
 ## AI correction (optional)
 
 Off by default. Turn it on in **Settings → AI Correction** or per file in the queue.
