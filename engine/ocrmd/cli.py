@@ -304,7 +304,10 @@ def main(argv=None) -> int:
         args.ai_languages = " and ".join(LANG_NAMES.get(l, l) for l in args.lang.split("+"))
 
     vision_cfg = None
-    if args.vision:
+    server = None
+    if args.vision == "llamacpp":
+        vision_cfg, server = start_llamacpp(args)
+    elif args.vision:
         from .vision import VisionConfig, DEFAULT_OLLAMA_MODEL, DEFAULT_SERVER_MODEL
         vision_cfg = VisionConfig(
             provider=args.vision, base_url=args.vision_url, api_key=os.environ.get("OCRMD_VISION_KEY", ""),
