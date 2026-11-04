@@ -111,6 +111,11 @@ def convert_with_markitdown(path: str) -> str:
     return MarkItDown(enable_plugins=False).convert(path).text_content
 
 
+def vision_defaults():
+    from . import vision as v
+    return v.DEFAULT_OLLAMA_MODEL, v.DEFAULT_SERVER_MODEL
+
+
 LANG_NAMES = {"eng": "English", "swa": "Swahili", "fra": "French", "deu": "German", "spa": "Spanish",
               "por": "Portuguese", "ita": "Italian", "ara": "Arabic", "hin": "Hindi", "rus": "Russian"}
 
