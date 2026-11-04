@@ -7,7 +7,9 @@ Turn PDFs into clean Markdown — text, headings, lists, tables **and figures** 
   This is the pipeline from the Scholar's Sphere project, extended to keep layout and pictures.
 * **Mixed PDFs** are handled page by page: only pages without a text layer are OCR'd.
 * **Word, PowerPoint, Excel, HTML, EPUB…** go through [Microsoft MarkItDown](https://github.com/microsoft/markitdown).
-* A native **SwiftUI app** (drag & drop, queue, live progress, rendered preview, figure gallery) drives the engine.
+* A native **SwiftUI app** (drag & drop, queue, page ranges, live per-page progress with streaming output, rendered preview, figure gallery) drives the engine.
+* **Optional AI correction**: a local **Ollama** model or **OpenRouter** repairs OCR mistakes page by page, using the neighbouring pages as context.
+* **Parallel everywhere**: pages are OCR'd in parallel Tesseract processes, text-layer pages are extracted in parallel worker processes, AI corrections run several pages at once, and two files can overlap (one reading while the other waits for the AI).
 
 ## What ends up in the Markdown
 
@@ -23,15 +25,38 @@ Turn PDFs into clean Markdown — text, headings, lists, tables **and figures** 
 | Running headers / footers and page numbers removed | ✅ | ✅ |
 | OCR confidence per page, low-confidence warning | – | ✅ |
 
-Output for `Book.pdf`:
+Output for `Book.pdf` goes to `~/Documents/ocr/` by default (changeable in Settings):
 
 ```
-Book/
+~/Documents/ocr/Book/
   Book.md              # front matter + Markdown, <!-- page N --> markers
+  Book.ocr.md          # the untouched OCR text (only when AI correction ran)
   Book.preview.html    # rendered preview used by the app
   figures/p0003_f1.png
-  report.json          # pages, OCR pages, figures, tables, confidence, timings
+  report.json          # pages, OCR pages, figures, tables, confidence, AI summary, timings
 ```
+
+## Word / PowerPoint-style PDFs
+
+Hyperlinks become Markdown links, Symbol/Wingdings bullets become real lists, monospaced text becomes
+`code`, `LABEL:` lines keep their own lines, bold section titles become headings, a repeated title block is
+kept once, and watermarks or boxes drawn behind text are never mistaken for figures.
+
+## AI correction (optional)
+
+Off by default. Turn it on in **Settings → AI Correction** or per file in the queue.
+
+| | Ollama | OpenRouter |
+|---|---|---|
+| Where it runs | your Mac | cloud |
+| Needs | `ollama serve` + a model (7B+ recommended) | API key (stored in the Keychain) |
+| Privacy | nothing leaves the Mac | page **text** (never images) goes to OpenRouter and the model provider |
+
+Each page is sent with the end of the previous page and the start of the next as context, in parallel.
+Safety rails: figure lines never reach the model; answers that rewrite more than ~45% of a page, change
+its length drastically, or fail are discarded and the original OCR text is kept (shown as "AI kept original").
+CLI: `--ai ollama|openrouter --ai-model … --ai-workers 3 --ai-scope ocr|all --ai-skip-confident 95`
+(OpenRouter key via the `OCRMD_AI_KEY` environment variable).
 
 ## Quick start
 

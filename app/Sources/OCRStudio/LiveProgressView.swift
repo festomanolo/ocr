@@ -19,10 +19,10 @@ struct LiveProgressView: View {
             Divider()
             HStack(spacing: 0) {
                 PagesPanel(job: job, thumbs: thumbs)
-                    .frame(minWidth: 300, idealWidth: 380, maxWidth: 460)
+                    .frame(minWidth: 230, idealWidth: 300, maxWidth: 400)
                 Divider()
                 OutputPanel(job: job)
-                    .frame(minWidth: 340, maxWidth: .infinity)
+                    .frame(minWidth: 280, maxWidth: .infinity)
             }
         }
     }
@@ -72,6 +72,7 @@ struct ProgressHeader: View {
                     Spacer()
                 }
                 .font(.caption)
+                .transaction { $0.animation = nil }
             }
             .padding(.horizontal, 20).padding(.vertical, 14)
             .background(.bar)
@@ -145,7 +146,7 @@ struct PagesPanel: View {
             Divider()
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 78, maximum: 104), spacing: 12)], spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 70, maximum: 100), spacing: 12)], spacing: 14) {
                         ForEach(job.pages, id: \.self) { n in
                             PageTile(number: n, state: job.pageState[n] ?? .pending,
                                      result: job.results[n], ai: job.aiState[n], thumbs: thumbs)

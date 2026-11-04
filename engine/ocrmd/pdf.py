@@ -398,6 +398,21 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
 
 
 # ── Whole document ──────────────────────────────────────────────────────────
+# ── parallel text-layer extraction (separate processes: table finding is CPU-bound Python) ──
+_WORKER_DOC = None
+
+
+def _pool_init(path: str) -> None:
+    global _WORKER_DOC
+    _WORKER_DOC = fitz.open(path)
+
+
+def _pool_extract(n: int, fig_dir: str, opts: "Options"):
+    counters = {"figures": 0, "tables": 0}
+    pg = extract_text_page(_WORKER_DOC[n - 1], n, fig_dir, opts, counters)
+    return n, pg, counters
+
+
 def replace_dpi(opts: Options, dpi: int) -> Options:
     import dataclasses
     return dataclasses.replace(opts, dpi=dpi)
@@ -437,10 +452,32 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
                       "md": md, "figures": figs,
                       "conf": round(pg.confidence, 1) if pg is not None and pg.confidence is not None else None})
 
-    for n in wanted:
-        if kinds[n] == "text":
+    text_list = [n for n in wanted if kinds[n] == "text"]
+
+    def extract_sequentially(todo):
+        for n in todo:
             pages[n] = extract_text_page(doc[n - 1], n, fig_dir, opts, counters)
             tick(n, "text", pages[n])
+
+    if len(text_list) >= 3 and opts.workers > 1:
+        import multiprocessing
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        try:
+            with ProcessPoolExecutor(max_workers=min(opts.workers, len(text_list)),
+                                     mp_context=multiprocessing.get_context("spawn"),
+                                     initializer=_pool_init, initargs=(path,)) as ex:
+                futures = [ex.submit(_pool_extract, n, fig_dir, opts) for n in text_list]
+                for fut in as_completed(futures):
+                    n, pg, c = fut.result()
+                    pages[n] = pg
+                    counters["figures"] += c["figures"]
+                    counters["tables"] += c["tables"]
+                    tick(n, "text", pg)
+        except Exception as e:                       # sandboxed / unusual environment: just do it in-process
+            progress({"event": "warning", "message": f"Parallel extraction unavailable ({type(e).__name__}); continuing in one process."})
+            extract_sequentially([n for n in text_list if n not in pages])
+    else:
+        extract_sequentially(text_list)
 
     if ocr_list:
         render_lock = threading.Lock()               # PyMuPDF documents are not thread-safe

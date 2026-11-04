@@ -21,7 +21,7 @@ struct OCRStudioApp: App {
         WindowGroup("OCR Studio") {
             ContentView()
                 .environmentObject(store)
-                .frame(minWidth: 940, minHeight: 600)
+                .frame(minWidth: 1000, minHeight: 620)
         }
         .windowToolbarStyle(.unified)
         .commands {
