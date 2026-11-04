@@ -210,6 +210,15 @@ def main(argv=None) -> int:
                     help="Always render scans at --dpi instead of capping at 2x their real resolution")
     ap.add_argument("--no-page-markers", action="store_true")
     ap.add_argument("--no-frontmatter", action="store_true")
+    ai = ap.add_argument_group("AI correction (optional)")
+    ai.add_argument("--ai", choices=["ollama", "openrouter"], help="Correct OCR text page by page with an LLM")
+    ai.add_argument("--ai-model", default="", help="e.g. qwen2.5:7b (Ollama) or google/gemini-2.0-flash-001")
+    ai.add_argument("--ai-url", default="", help="Override the API base URL")
+    ai.add_argument("--ai-workers", type=int, default=3, help="Pages corrected in parallel")
+    ai.add_argument("--ai-languages", default="", help="Language names for the prompt (default from --lang)")
+    ai.add_argument("--ai-scope", choices=["ocr", "all"], default="ocr", help="ocr = only OCR'd pages")
+    ai.add_argument("--ai-skip-confident", type=float, default=0.0,
+                    help="Skip OCR pages whose Tesseract confidence is at least this (0 = off)")
     ap.add_argument("--preview", action="store_true", help="Also write an HTML preview")
     ap.add_argument("--json", action="store_true", help="Machine-readable progress on stdout")
     ap.add_argument("--list-langs", action="store_true")
@@ -228,6 +237,10 @@ def main(argv=None) -> int:
         return 0
     if not args.inputs:
         ap.error("no input files")
+    if args.ai and not args.ai_model:
+        ap.error("--ai needs --ai-model")
+    if args.ai and not args.ai_languages:
+        args.ai_languages = " and ".join(LANG_NAMES.get(l, l) for l in args.lang.split("+"))
 
     opts = Options(ocr=args.ocr, lang=args.lang, dpi=args.dpi, figures=not args.no_figures,
                    tables=not args.no_tables, deskew=not args.no_deskew, workers=args.workers,
