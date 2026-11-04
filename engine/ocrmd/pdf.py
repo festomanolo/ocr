@@ -207,7 +207,7 @@ def _text_page_figures(doc_page, number, fig_dir, opts, lines_all, table_blocks,
     rects: List[fitz.Rect] = []
     scan_like = False
 
-    for info in doc_page.get_image_info():
+    for info in doc_page.get_image_info(xrefs=True):
         r = fitz.Rect(info["bbox"]) & rect
         if r.is_empty:
             continue
@@ -218,6 +218,8 @@ def _text_page_figures(doc_page, number, fig_dir, opts, lines_all, table_blocks,
             continue
         if max(r.width / r.height, r.height / r.width) > 15:
             continue
+        if _text_container(r, lines_all) or (info.get("xref") and _faint_image(doc_page, info["xref"])):
+            continue                                  # watermark / background behind text
         rects.append(r)
 
     try:
