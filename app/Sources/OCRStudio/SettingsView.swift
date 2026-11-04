@@ -19,7 +19,7 @@ struct SettingsView: View {
                 Picker("Run OCR on", selection: $ocrMode) {
                     ForEach(OCRMode.allCases) { Text($0.title).tag($0.rawValue) }
                 }
-                Picker("Resolution", selection: $dpi) {
+                Picker("Maximum resolution", selection: $dpi) {
                     Text("200 dpi — fastest").tag(200)
                     Text("300 dpi — recommended").tag(300)
                     Text("400 dpi — small print").tag(400)
