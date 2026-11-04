@@ -386,10 +386,16 @@ def convert_pdf(path: str, out_dir: str, opts: Options, progress: Progress = lam
     lock = threading.Lock()
     done = [0]
 
-    def tick(n: int, kind: str):
+    def tick(n: int, kind: str, pg: Optional[Page] = None):
+        md, figs = "", []
+        if pg is not None:
+            md = layout.assemble([pg], page_markers=False)
+            figs = [b.image for b in pg.blocks if b.kind == "figure"]
         with lock:
             done[0] += 1
-            progress({"event": "page", "page": n, "kind": kind, "done": done[0], "total": len(wanted)})
+            progress({"event": "page", "page": n, "kind": kind, "done": done[0], "total": len(wanted),
+                      "md": md, "figures": figs,
+                      "conf": round(pg.confidence, 1) if pg is not None and pg.confidence is not None else None})
 
     for n in wanted:
         if kinds[n] == "text":
