@@ -1,0 +1,5 @@
+pymupdf>=1.24.3
+pillow>=10.0
+numpy>=1.24
+markdown>=3.5
+markitdown[docx,pptx,xlsx]>=0.1.0
