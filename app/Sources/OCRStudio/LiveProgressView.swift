@@ -294,7 +294,7 @@ struct OutputPanel: View {
                         if donePages.isEmpty { Waiting() }
                         ForEach(donePages, id: \.self) { n in
                             if let r = job.results[n] {
-                                PageCard(number: n, result: r, outDir: job.outDir)
+                                PageCard(number: n, result: r, ai: job.aiState[n], outDir: job.outDir)
                                     .id(n)
                                     .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
                                                             removal: .opacity))
