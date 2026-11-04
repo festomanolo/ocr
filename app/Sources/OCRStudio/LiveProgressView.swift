@@ -296,8 +296,6 @@ struct OutputPanel: View {
                             if let r = job.results[n] {
                                 PageCard(number: n, result: r, ai: job.aiState[n], kept: job.aiKept[n] ?? 0, outDir: job.outDir)
                                     .id(n)
-                                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
-                                                            removal: .opacity))
                             }
                         }
                         if !running.isEmpty { ReadingRow(pages: running, ai: job.phase == .refining).id("reading") }
