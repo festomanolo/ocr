@@ -264,7 +264,15 @@ def main(argv=None) -> int:
     ai.add_argument("--ai-skip-confident", type=float, default=0.0,
                     help="Skip OCR pages whose Tesseract confidence is at least this (0 = off)")
     vg = ap.add_argument_group("Vision layer (optional): re-read hard pages with a document vision model, e.g. Xiaomi-OCR-0")
-    vg.add_argument("--vision", choices=["ollama", "openai"], help="ollama, or any OpenAI-compatible server (vLLM/SGLang)")
+    vg.add_argument("--vision", choices=["llamacpp", "ollama", "openai"],
+                    help="llamacpp = start a private llama-server with the local Xiaomi-OCR-0 GGUF (recommended); "
+                         "ollama; or any OpenAI-compatible server (vLLM/SGLang)")
+    vg.add_argument("--llama-server", default="", help="path to llama-server (default: auto-detect)")
+    vg.add_argument("--vision-gguf", default="", help="Xiaomi-OCR-0 GGUF (default: models/xiaomi-ocr-0, prefers Q4_K_M)")
+    vg.add_argument("--vision-mmproj", default="", help="vision projector GGUF (default: next to the model)")
+    vg.add_argument("--vision-threads", type=int, default=0, help="CPU threads for llama-server (0 = auto)")
+    vg.add_argument("--vision-max-side", type=int, default=1200,
+                    help="longest page-image side sent to the model, pixels; smaller = much faster (1200 ≈ 100 dpi A4)")
     vg.add_argument("--vision-model", default="", help=f"default {vision_defaults()[0]} (ollama) / {vision_defaults()[1]} (openai)")
     vg.add_argument("--vision-url", default="")
     vg.add_argument("--vision-mode", choices=["low-confidence", "all"], default="low-confidence")
