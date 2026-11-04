@@ -554,20 +554,22 @@ def assemble(pages: List[Page], page_markers: bool = True) -> str:
         for b in p.blocks:
             raw_items.extend(block_items(p, b, styler))
         page_items: List[Item] = []
-        for b in p.blocks:
-            page_items.extend(block_items(p, b, styler))
+        for it in raw_items:                       # continuation blocks inside the page
+            if page_items and stitch(page_items[-1], it, across_page=False):
+                page_items[-1].text = join_lines([page_items[-1].text, it.text], styler.vocab)
+            else:
+                page_items.append(it)
         if not page_items:
             continue
-        # A paragraph that runs over the page break is stitched back together.
-        if items and items[-1].kind == "para" and page_items[0].kind == "para":
-            last, first = items[-1].text, page_items[0].text
-            if not re.search(r"[.!?:;\"”)\]]\**$", last) and re.match(r"\**[a-z]", first):
-                items[-1].text = join_lines([last, first])
-                page_items = page_items[1:]
-                if not page_items:
-                    continue
-                items.extend(page_items)
+        if items and stitch(items[-1], page_items[0], across_page=True):
+            items[-1].text = join_lines([items[-1].text, page_items[0].text], styler.vocab)
+            page_items = page_items[1:]
+            if not page_items:
                 continue
+            if page_markers:       # the marker sits after the stitched sentence: "the rest of page N starts here"
+                items.append(Item("marker", f"<!-- page {p.number} -->", p.number))
+            items.extend(page_items)
+            continue
         if page_markers:
             items.append(Item("marker", f"<!-- page {p.number} -->", p.number))
         items.extend(page_items)
