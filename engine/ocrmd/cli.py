@@ -228,6 +228,13 @@ def main(argv=None) -> int:
     ai.add_argument("--ai-scope", choices=["ocr", "all"], default="ocr", help="ocr = only OCR'd pages")
     ai.add_argument("--ai-skip-confident", type=float, default=0.0,
                     help="Skip OCR pages whose Tesseract confidence is at least this (0 = off)")
+    vg = ap.add_argument_group("Vision layer (optional): re-read hard pages with a document vision model, e.g. Xiaomi-OCR-0")
+    vg.add_argument("--vision", choices=["ollama", "openai"], help="ollama, or any OpenAI-compatible server (vLLM/SGLang)")
+    vg.add_argument("--vision-model", default="", help=f"default {vision_defaults()[0]} (ollama) / {vision_defaults()[1]} (openai)")
+    vg.add_argument("--vision-url", default="")
+    vg.add_argument("--vision-mode", choices=["low-confidence", "all"], default="low-confidence")
+    vg.add_argument("--vision-min-conf", type=float, default=85.0, help="re-read pages Tesseract scored below this")
+    vg.add_argument("--vision-workers", type=int, default=1)
     ap.add_argument("--preview", action="store_true", help="Also write an HTML preview")
     ap.add_argument("--json", action="store_true", help="Machine-readable progress on stdout")
     ap.add_argument("--list-langs", action="store_true")
