@@ -40,6 +40,7 @@ struct AIReport: Decodable, Equatable {
     var seconds: Double
     enum CodingKeys: String, CodingKey {
         case provider, model, corrected, unchanged, skipped, failed, seconds
+        case keptPassages = "kept_passages"
         case firstError = "first_error"
     }
 }
