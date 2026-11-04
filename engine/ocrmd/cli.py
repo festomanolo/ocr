@@ -292,6 +292,8 @@ def main(argv=None) -> int:
             info["markitdown"] = True
         except ImportError:
             info["markitdown"] = False
+        from . import llamaserver
+        info["vision_llamacpp"] = llamaserver.availability()
         print(json.dumps(info), file=OUT, flush=True)
         return 0
     if not args.inputs:
