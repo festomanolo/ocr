@@ -363,21 +363,37 @@ def fmt_spans(spans: Sequence[Span]) -> str:
         if runs and tuple(runs[-1][1:]) == key:
             runs[-1][0] += s.text
         else:
-            runs.append([s.text, s.bold, s.italic])
+            runs.append([s.text, *key])
+    # A space between two identically styled runs belongs to both: "**a** **b**" → "**a b**".
+    merged: List[List] = []
+    for r in runs:
+        if (len(merged) >= 2 and not merged[-1][0].strip() and tuple(merged[-2][1:]) == tuple(r[1:])
+                and any(r[1:4])):
+            merged[-2][0] += merged[-1][0] + r[0]
+            merged.pop()
+        elif merged and tuple(merged[-1][1:]) == tuple(r[1:]):
+            merged[-1][0] += r[0]
+        else:
+            merged.append(r)
     out = []
-    for text, bold, italic in runs:
+    for text, bold, italic, mono, href in merged:
         if not text.strip():
             out.append(text)
             continue
         lead = text[: len(text) - len(text.lstrip())]
         trail = text[len(text.rstrip()):]
-        core = esc(text.strip())
-        if bold and italic:
-            core = f"***{core}***"
-        elif bold:
-            core = f"**{core}**"
-        elif italic:
-            core = f"*{core}*"
+        if mono:                                   # emails, URLs, code: inline code, no escaping
+            core = "`" + text.strip().replace("`", "'") + "`"
+        else:
+            core = esc(text.strip())
+            if bold and italic:
+                core = f"***{core}***"
+            elif bold:
+                core = f"**{core}**"
+            elif italic:
+                core = f"*{core}*"
+        if href:
+            core = f"[{core}]({href})"
         out.append(lead + core + trail)
     return re.sub(r"\s+", " ", "".join(out)).strip()
 
