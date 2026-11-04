@@ -351,6 +351,7 @@ struct ReadingRow: View {
 struct PageCard: View {
     let number: Int
     let result: PageResult
+    var ai: AIState?
     let outDir: String?
 
     var body: some View {
