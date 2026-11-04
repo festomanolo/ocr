@@ -191,7 +191,42 @@ def changed_share(a: str, b: str) -> float:
     return round(1 - sm.ratio(), 3)
 
 
-def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> str:
+GROUP_CHARS = 900
+
+
+def split_groups(text: str, limit: int = GROUP_CHARS) -> List[str]:
+    """Splits a page into passages of a few paragraphs. Small models stay accurate on short passages,
+    and a bad answer then costs one passage, not the whole page."""
+    groups: List[str] = []
+    cur = ""
+    for block in re.split(r"\n{2,}", text.strip()):
+        if cur and len(cur) + len(block) > limit:
+            groups.append(cur)
+            cur = block
+        else:
+            cur = f"{cur}\n\n{block}" if cur else block
+    if cur:
+        groups.append(cur)
+    return groups
+
+
+def worth_correcting(group: str) -> bool:
+    return sum(c.isalpha() for c in FIG_TOKEN_RE.sub("", group)) >= 12
+
+
+FIG_TOKEN_RE = re.compile(r"⟦FIG\d+⟧")
+
+
+@dataclass
+class PageResult:
+    text: str
+    kept: int = 0                      # passages the model got wrong, so the original was kept
+    sent: int = 0
+    first_error: str = ""
+
+
+def correct_page(cfg: AIConfig, prev_tail: str, page: str, next_head: str) -> PageResult:
+    """Corrects one page passage by passage; every passage is validated on its own."""
     system = SYSTEM_PROMPT.format(languages=cfg.languages)
     protected, figs = protect_figures(page)
     user = build_user_message(prev_tail, protected, next_head)
