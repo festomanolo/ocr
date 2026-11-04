@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage("tables") private var tables = true
     @AppStorage("pageMarkers") private var pageMarkers = true
     @AppStorage("deskew") private var deskew = true
+    @AppStorage("autoDPI") private var autoDPI = true
+    @AppStorage("workers") private var workers = 0
     @AppStorage("outputPath") private var outputPath = ""
 
     var body: some View {
