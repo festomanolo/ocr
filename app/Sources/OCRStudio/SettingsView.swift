@@ -2,6 +2,22 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var store: JobStore
+
+    var body: some View {
+        TabView {
+            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
+            AISettings().tabItem { Label("AI Correction", systemImage: "sparkles") }
+            EngineSettings().tabItem { Label("Engine", systemImage: "cpu") }
+        }
+        .frame(width: 560, height: 600)
+        .task { await store.refreshHealth() }
+    }
+}
+
+// MARK: General
+
+struct GeneralSettings: View {
+    @EnvironmentObject var store: JobStore
     @AppStorage("ocrMode") private var ocrMode = OCRMode.auto.rawValue
     @AppStorage("languages") private var languages = "eng"
     @AppStorage("dpi") private var dpi = 300
@@ -11,6 +27,7 @@ struct SettingsView: View {
     @AppStorage("deskew") private var deskew = true
     @AppStorage("autoDPI") private var autoDPI = true
     @AppStorage("workers") private var workers = 0
+    @AppStorage("filesAtOnce") private var filesAtOnce = 0
     @AppStorage("outputPath") private var outputPath = ""
 
     var body: some View {
