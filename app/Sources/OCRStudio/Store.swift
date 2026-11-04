@@ -243,9 +243,14 @@ final class JobStore: ObservableObject {
         if job.isPDF, let range = PageRange.parse(job.pageRange, max: job.pageCount), !range.isEmpty {
             args += ["--pages", range]
         }
-        guard let engineRun = EngineRun(args: args) else {
+        var env: [String: String] = [:]
+        if job.useAI && settings.aiReady {
+            args += settings.aiArguments
+            if settings.aiProvider == "openrouter" { env["OCRMD_AI_KEY"] = Keychain.read("openrouter") ?? "" }
+            update(id) { $0.aiModel = settings.aiModel; $0.aiProvider = settings.aiProvider }
+        }
+        guard let engineRun = EngineRun(args: args, extraEnv: env) else {
             update(id) { $0.status = .failed("The conversion engine isn't installed yet.") }
-            pumping = false
             showSetup = true
             return
         }
