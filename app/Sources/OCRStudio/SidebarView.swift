@@ -60,9 +60,10 @@ struct JobRow: View {
                 Text(job.name).lineLimit(1).truncationMode(.middle)
                 switch job.status {
                 case .running:
-                    ProgressView(value: job.fraction).controlSize(.small)
-                    Text(job.total > 0 ? "Page \(job.done) of \(job.total)" : "Starting…")
-                        .font(.caption).foregroundStyle(.secondary)
+                    ProgressView(value: job.fraction).controlSize(.small).tint(job.phase == .refining ? .purple : .accentColor)
+                    Text(job.phase == .refining ? "AI refining \(job.aiDone) of \(job.aiTotal)"
+                         : (job.total > 0 ? "Page \(job.done) of \(job.total)" : "Starting…"))
+                        .font(.caption).foregroundStyle(job.phase == .refining ? Color.purple : .secondary)
                 case .done:
                     if let r = job.report {
                         Text(subtitle(r)).font(.caption).foregroundStyle(.secondary)
