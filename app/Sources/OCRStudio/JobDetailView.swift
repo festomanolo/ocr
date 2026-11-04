@@ -290,3 +290,29 @@ struct QueuedView: View {
         .padding()
     }
 }
+
+struct AIToggle: View {
+    @EnvironmentObject var store: JobStore
+    let job: Job
+
+    var body: some View {
+        let st = ConvertSettings.load()
+        VStack(spacing: 4) {
+            Toggle(isOn: Binding(get: { job.useAI }, set: { store.setUseAI(job.id, $0) })) {
+                Label("Correct text with AI", systemImage: "sparkles")
+            }
+            .toggleStyle(.switch)
+            .disabled(!st.aiReady)
+            Group {
+                if st.aiReady {
+                    Text("\(st.aiProvider == "ollama" ? "Ollama" : "OpenRouter") · \(st.aiModel)").foregroundStyle(.secondary)
+                } else {
+                    Button("Set up AI correction in Settings…") {
+                        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    }.buttonStyle(.link)
+                }
+            }
+            .font(.caption)
+        }
+    }
+}
