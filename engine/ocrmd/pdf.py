@@ -401,6 +401,22 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
     return page
 
 
+def _vision_pass(page: Page, gray: Image.Image, figures: List[Block], cfg: "visionmod.VisionConfig") -> None:
+    """Layer 2: replace this page's text with the vision model's Markdown, keeping layer-1 figures."""
+    try:
+        pieces = visionmod.split_blocks(visionmod.read_page(cfg, gray))
+    except visionmod.VisionError as e:
+        page.notes.append(f"vision layer failed, kept Tesseract text: {e}")
+        return
+    captions = {re.sub(r"\W+", "", f.caption.lower()) for f in figures if f.caption}
+    pieces = [p for p in pieces if re.sub(r"\W+", "", p.lower().strip("*_ ")) not in captions]     # caption is on the figure
+    n = max(1, len(pieces))
+    raw = [Block("raw", (0, (i + 0.5) / n * page.height, page.width, (i + 0.5) / n * page.height + 1), raw=piece)
+           for i, piece in enumerate(pieces)]
+    page.blocks = sorted(raw + figures, key=lambda b: b.bbox[1])    # figures keep their real vertical position
+    page.engine = "vision"
+
+
 # ── Whole document ──────────────────────────────────────────────────────────
 # ── parallel text-layer extraction (separate processes: table finding is CPU-bound Python) ──
 _WORKER_DOC = None
