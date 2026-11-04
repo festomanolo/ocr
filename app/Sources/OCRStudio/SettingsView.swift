@@ -42,9 +42,10 @@ struct GeneralSettings: View {
                     Text("400 dpi — small print").tag(400)
                 }
                 Toggle("Match each scan's real resolution (faster)", isOn: $autoDPI)
-                Text("Low-resolution scans are not enlarged beyond 2× — that adds time but no detail.")
-                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Straighten tilted pages and even out lighting", isOn: $deskew)
+                languagePicker
+            }
+            Section {
                 Picker("Pages at once", selection: $workers) {
                     Text("Automatic (\(max(1, min(6, ProcessInfo.processInfo.activeProcessorCount / 2))))").tag(0)
                     ForEach([1, 2, 3, 4, 6, 8], id: \.self) { Text("\($0)").tag($0) }
