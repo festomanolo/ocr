@@ -85,7 +85,13 @@ struct ConvertSettings {
             openRouterModel: d.string(forKey: "openRouterModel") ?? "google/gemini-2.0-flash-001",
             aiWorkers: d.object(forKey: "aiWorkers") as? Int ?? 3,
             aiScope: d.string(forKey: "aiScope") ?? "ocr",
-            aiSkipConfident: d.object(forKey: "aiSkipConfident") as? Bool ?? true
+            aiSkipConfident: d.object(forKey: "aiSkipConfident") as? Bool ?? true,
+            visionEnabled: d.object(forKey: "visionEnabled") as? Bool ?? false,
+            visionProvider: d.string(forKey: "visionProvider") ?? "ollama",
+            visionModel: d.string(forKey: "visionModel") ?? defaultVisionModel,
+            visionURL: d.string(forKey: "visionURL") ?? "",
+            visionMode: d.string(forKey: "visionMode") ?? "low-confidence",
+            visionMinConf: d.object(forKey: "visionMinConf") as? Int ?? 85
         )
     }
 
