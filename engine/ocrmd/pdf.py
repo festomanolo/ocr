@@ -460,6 +460,7 @@ def convert_image(path: str, out_dir: str, opts: Options, progress: Progress = l
             pages.append(ocr_page_image(frame, i, fig_dir, tmp, opts, lang, counters))
             progress({"event": "page", "page": i, "kind": "ocr", "done": i, "total": len(frames),
                       "md": layout.assemble([pages[-1]], page_markers=False),
+                      "figures": [b.image for b in pages[-1].blocks if b.kind == "figure"],
             progress({"event": "page", "page": i, "kind": "ocr", "done": i, "total": len(frames)})
     res = Result(pages=pages, figures=counters["figures"], ocr_pages=len(pages))
     res.removed_running = layout.strip_running(pages)
