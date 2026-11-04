@@ -279,7 +279,7 @@ struct OutputPanel: View {
             HStack {
                 Text("Live output").font(.headline)
                 Spacer()
-                Text("\(donePages.count) of \(job.pages.count) pages").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                Text("\(done.count) of \(job.pages.count) pages").font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 Toggle(isOn: $follow) { Text("Follow") }.toggleStyle(.switch).controlSize(.mini)
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
