@@ -316,8 +316,6 @@ final class JobStore: ObservableObject {
         flushScheduled = false
         let batch = pending
         pending = []
-        var jobsCopy = jobs                      // one @Published assignment per batch, not one per event
-        swap(&jobsCopy, &jobs)
         for (id, ev, raw) in batch { handle(ev, raw: raw, id: id) }
     }
 
