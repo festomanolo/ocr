@@ -169,6 +169,7 @@ struct EngineEvent: Decodable {
     var status: String?
     var reason: String?
     var changed: Double?
+    var kept: Int?
     var model: String?
     var provider: String?
 
