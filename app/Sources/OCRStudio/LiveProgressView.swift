@@ -361,6 +361,7 @@ struct PageCard: View {
                 Chip(icon: result.kind == "ocr" ? "eye" : "textformat",
                      text: result.kind == "ocr" ? "OCR" : "Text layer",
                      tint: result.kind == "ocr" ? .purple : .secondary)
+                if result.vision { Chip(icon: "viewfinder", text: "Vision model", tint: .indigo) }
                 if let c = result.confidence {
                     Chip(icon: "checkmark.seal", text: "\(Int(c))%", tint: c >= 80 ? .green : (c >= 60 ? .orange : .red))
                 }
