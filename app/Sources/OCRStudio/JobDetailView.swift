@@ -277,6 +277,7 @@ struct QueuedView: View {
                 }
                 .frame(width: 400)
             }
+            AIToggle(job: job)
             HStack {
                 Button { store.start() } label: { Label("Convert", systemImage: "play.fill").padding(.horizontal, 10) }
                     .buttonStyle(.borderedProminent).controlSize(.large)
