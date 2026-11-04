@@ -52,6 +52,21 @@ class Line:
         spans = [s for s in self.spans if s.text.strip()]
         return bool(spans) and all(s.bold for s in spans)
 
+    @property
+    def all_mono(self) -> bool:
+        spans = [s for s in self.spans if s.text.strip()]
+        return bool(spans) and all(s.mono for s in spans)
+
+    @property
+    def starts_with_label(self) -> bool:
+        """'**Phase 1:** text' — a bold run ending in a colon opens the line (key: value layout)."""
+        for sp in self.spans:
+            t = sp.text.strip()
+            if not t or t in BULLET_CHARS:
+                continue
+            return sp.bold and t.endswith(":")
+        return False
+
 
 @dataclass
 class Block:
@@ -150,11 +165,13 @@ def _key(text: str) -> str:
     return re.sub(r"\d+", "#", re.sub(r"\s+", " ", text.strip().lower()))
 
 
-def strip_running(pages: List[Page], band: float = 0.11) -> int:
-    """Removes repeated headers/footers and bare page numbers near the page edges.
+def strip_running(pages: List[Page], band: float = 0.11, header_band: float = 0.22) -> int:
+    """Removes bare page numbers and repeated headers/footers.
 
-    A block in the top/bottom band is dropped if its text (digits ignored) repeats
-    on enough pages, or if it is only a page number. Returns how many were removed.
+    * A block near the very top/bottom that is only a page number is dropped.
+    * A block in the top/bottom ~20% whose text (digits ignored) repeats on enough pages is
+      dropped — except its first appearance when it is title-sized, so the document title survives.
+    Returns how many blocks were removed.
     """
     removed = 0
     counts: Dict[str, int] = {}
