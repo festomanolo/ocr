@@ -64,6 +64,7 @@ class Result:
     text_pages: int = 0
     ocr_pages: int = 0
     low_confidence: List[int] = field(default_factory=list)
+    vision_pages: List[int] = field(default_factory=list)
 
 
 # ── Page classification ─────────────────────────────────────────────────────
@@ -395,6 +396,8 @@ def ocr_page_image(rgb: Image.Image, number: int, fig_dir: str, tmp_dir: str, op
         page.confidence = sum(w.conf for w in words) / len(words)
     counters["figures"] += len(figure_blocks)
     page.blocks = layout.order_blocks(text_blocks + figure_blocks, W)
+    if opts.vision and opts.vision.wants(page.confidence):
+        _vision_pass(page, gray, figure_blocks, opts.vision)
     return page
 
 
