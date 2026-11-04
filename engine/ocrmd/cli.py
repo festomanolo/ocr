@@ -193,6 +193,8 @@ def process(path: str, out_root: str, opts: Options, args) -> dict:
         "low_confidence_pages": res.low_confidence,
         "words": len(body.split()), "seconds": seconds,
         "ai": ai_summary,
+        "vision_pages": res.vision_pages,
+        "vision_model": opts.vision.model if opts.vision else "",
     }
     with open(os.path.join(out_dir, "report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
