@@ -217,6 +217,8 @@ final class JobStore: ObservableObject {
 
     private func handle(_ ev: EngineEvent, raw: Data, id: UUID) {
         switch ev.event {
+        case "file":
+            update(id) { $0.outDir = ev.outDir; $0.startedAt = Date() }
         case "start":
             update(id) { $0.total = ev.total ?? 0; $0.ocrPages = ev.ocrPageCount ?? 0; $0.lang = ev.lang ?? "" }
         case "page":
