@@ -197,6 +197,14 @@ def strip_running(pages: List[Page], band: float = 0.11, header_band: float = 0.
         near_edge = b.bbox[3] < p.height * band or b.bbox[1] > p.height * (1 - band)
         if near_edge and PAGE_NUMBER_RE.match(b.text):
             drop.add(id(b))
+        elif counts[k] >= limit and k.replace("#", "").strip():
+            first_page = min(seen_on[k])
+            title_sized = body and max(l.size for l in b.lines) >= 1.25 * body
+            if p.number == first_page and title_sized and k not in kept_title:
+                kept_title.add(k)                      # keep the first (title) copy only
+                continue
+            drop.add(id(b))
+    removed = 0
     for p in pages:
         before = len(p.blocks)
         p.blocks = [b for b in p.blocks if id(b) not in drop]
@@ -234,6 +242,9 @@ class Styler:
         for r in sorted(set(ratios), reverse=True):
             if not self.levels or r < self.levels[-1] * 0.93:
                 self.levels.append(r)
+        # Bold one-line titles at body size (typical of Word documents) rank just below the size-based levels.
+        self.bold_level = min(4, max(2, len(self.levels) + 1))
+        self.vocab = Vocab(pages)
 
     @staticmethod
     def threshold(page: Page) -> float:
@@ -255,6 +266,72 @@ class Styler:
             if rr >= lv * 0.93:
                 return min(i + 1, 4)
         return 4
+
+
+class Vocab:
+    """Words seen in the document, used to decide whether a line-end hyphen is a soft break
+    (exper-/iment → experiment) or part of a compound (high-/impact → high-impact)."""
+
+    def __init__(self, pages: Sequence[Page]):
+        self.words: set = set()
+        self.compounds: set = set()
+        tok = re.compile(r"[a-z]+(?:-[a-z]+)*")
+        for p in pages:
+            for b in p.blocks:
+                if b.kind != "text":
+                    continue
+                skip_first = False
+                for l in b.lines:
+                    text = l.text.lower()
+                    toks = tok.findall(text)
+                    if skip_first and toks:
+                        toks = toks[1:]                 # continuation of a broken word
+                    ends_hyphen = text.rstrip().endswith("-")
+                    if ends_hyphen and toks:
+                        toks = toks[:-1]                # fragment before the break
+                    skip_first = ends_hyphen
+                    for t in toks:
+                        if "-" in t:
+                            self.compounds.add(t)
+                            self.words.update(t.split("-"))
+                        else:
+                            self.words.add(t)
+
+    _dict: Optional[set] = None
+
+    @classmethod
+    def system_words(cls) -> set:
+        """macOS/Linux word list (optional). Used only to tell soft hyphens from compounds."""
+        if cls._dict is None:
+            cls._dict = set()
+            for path in ("/usr/share/dict/words", "/usr/share/dict/american-english"):
+                try:
+                    with open(path, encoding="utf-8", errors="ignore") as f:
+                        cls._dict = {w.strip().lower() for w in f if len(w.strip()) >= 2}
+                    break
+                except OSError:
+                    continue
+        return cls._dict
+
+    def known(self, w: str) -> bool:
+        if w in self.words:
+            return True
+        d = self.system_words()
+        if w in d:
+            return True
+        for suf, repl in (("s", ""), ("es", ""), ("ed", ""), ("ed", "e"), ("d", ""), ("ing", ""), ("ing", "e"),
+                          ("ly", ""), ("ies", "y"), ("er", ""), ("est", "")):
+            if w.endswith(suf) and len(w) - len(suf) >= 3 and (w[: len(w) - len(suf)] + repl) in d:
+                return True
+        return False
+
+    def keep_hyphen(self, left: str, right: str) -> bool:
+        l, r = left.lower(), right.lower()
+        if f"{l}-{r}" in self.compounds:
+            return True
+        if self.known(l + r):
+            return False                        # joined form is a real word: it was only a line break
+        return len(l) >= 3 and len(r) >= 3 and self.known(l) and self.known(r)
 
 
 def _weighted_median(pairs: Sequence[Tuple[float, int]]) -> float:
