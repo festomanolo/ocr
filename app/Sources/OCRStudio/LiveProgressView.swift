@@ -217,16 +217,6 @@ struct PageTile: View {
             .foregroundStyle(active ? accent : .secondary)
         }
         .task { image = await thumbs.image(for: number) }
-        .onChange(of: active) { on in
-            guard on, !reduceMotion else { return }
-            beam = 0
-            withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
-        }
-        .onAppear {
-            if active, !reduceMotion {
-                withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
-            }
-        }
     }
 
     /// Green check once read; purple sparkle once the AI has corrected the page; orange warning if the AI kept the original.
