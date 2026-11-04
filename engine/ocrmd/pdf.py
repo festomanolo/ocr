@@ -141,13 +141,14 @@ def extract_text_page(doc_page: "fitz.Page", number: int, fig_dir: str, opts: Op
                 continue
             spans, sizes = [], []
             for sp in ln["spans"]:
-                t = sp["text"]
+                t = sp["text"].translate(PUA_MAP)
                 if not t.strip() and not spans:
                     continue
                 font = sp.get("font", "").lower()
                 bold = bool(sp["flags"] & 16) or any(k in font for k in ("bold", "black", "heavy", "semibold", "demi"))
                 italic = bool(sp["flags"] & 2) or any(k in font for k in ("italic", "oblique"))
-                spans.append(Span(t, bold, italic))
+                mono = bool(sp["flags"] & 8) or any(k in font for k in MONO_FONTS)
+                spans.append(Span(t, bold, italic, mono, href_for(sp["bbox"]) if t.strip() else ""))
                 sizes.append((sp["size"], max(1, len(t.strip()))))
             if not spans or not "".join(s.text for s in spans).strip():
                 continue
