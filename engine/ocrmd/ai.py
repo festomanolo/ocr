@@ -314,7 +314,8 @@ def refine(chunks: List[Tuple[int, str]], kinds: Dict[int, str], confidence: Dic
         prev_tail = FIGURE_RE.sub("", texts[idx - 1])[-cfg.context_chars:].strip() if idx > 0 else ""
         next_head = FIGURE_RE.sub("", texts[idx + 1])[:cfg.context_chars // 2].strip() if idx + 1 < total else ""
         try:
-            fixed = correct_page(cfg, prev_tail, text, next_head)
+            r = correct_page(cfg, prev_tail, text, next_head)
+            fixed = r.text
             share = changed_share(text, fixed)
             outcome = PageOutcome(n, fixed, "corrected" if fixed != text else "unchanged", share)
         except AIError as e:
