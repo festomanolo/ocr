@@ -29,6 +29,10 @@ from . import imaging, layout, tess
 from .layout import Block, Line, Page, Span
 
 MIN_PAGE_CHARS = 25                      # fewer non-space chars than this → scanned page (Sphere rule)
+# Word/PowerPoint write bullets with Symbol/Wingdings glyphs that land in the Unicode private-use area.
+PUA_MAP = {0xF0B7: "•", 0xF0A7: "▪", 0xF0D8: "➢", 0xF076: "❖", 0xF0FC: "✓", 0xF0A8: "□",
+           0xF02D: "–", 0xF0E0: "→", 0xF0B2: "•", 0xF06C: "●", 0xF06E: "■"}
+MONO_FONTS = ("courier", "consolas", "mono", "menlo", "monaco", "lucida console", "firacode", "sourcecode")
 FIG_CAPTION_RE = re.compile(r"^\s*(fig(?:ure)?|chart|diagram|plate|picture|illustration|photo)\.?\s*[\dIVX]+",
                             re.IGNORECASE)
 
@@ -113,6 +117,19 @@ def extract_text_page(doc_page: "fitz.Page", number: int, fig_dir: str, opts: Op
     rect = doc_page.rect
     page = Page(number, rect.width, rect.height, "text")
     d = doc_page.get_text("dict", flags=fitz.TEXT_MEDIABOX_CLIP)
+
+    links = []
+    try:
+        links = [(fitz.Rect(l["from"]), l["uri"]) for l in doc_page.get_links() if l.get("uri")]
+    except Exception:
+        pass
+
+    def href_for(bbox) -> str:
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        for r, uri in links:
+            if r.x0 <= cx <= r.x1 and r.y0 <= cy <= r.y1:
+                return uri
+        return ""
 
     lines_all: List[Tuple[Line, int]] = []
     for bi, b in enumerate(d["blocks"]):
