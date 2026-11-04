@@ -30,6 +30,8 @@ struct ConvertSettings {
             tables: d.object(forKey: "tables") as? Bool ?? true,
             pageMarkers: d.object(forKey: "pageMarkers") as? Bool ?? true,
             deskew: d.object(forKey: "deskew") as? Bool ?? true,
+            autoDPI: d.object(forKey: "autoDPI") as? Bool ?? true,
+            workers: d.object(forKey: "workers") as? Int ?? 0,
             outputDir: path.isEmpty ? defaultOutput : URL(fileURLWithPath: path)
         )
     }
