@@ -173,8 +173,12 @@ def strip_running(pages: List[Page], band: float = 0.11, header_band: float = 0.
       dropped — except its first appearance when it is title-sized, so the document title survives.
     Returns how many blocks were removed.
     """
-    removed = 0
+    sizes = [(l.size, len(l.text)) for p in pages if p.kind == "text"
+             for b in p.blocks if b.kind == "text" for l in b.lines if l.text]
+    body = _weighted_median(sizes) if sizes else 0.0
+
     counts: Dict[str, int] = {}
+    seen_on: Dict[str, set] = {}
     edge: List[Tuple[Page, Block, str]] = []
     for p in pages:
         for b in p.blocks:
