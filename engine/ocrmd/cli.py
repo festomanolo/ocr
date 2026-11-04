@@ -129,7 +129,9 @@ def refine_with_ai(res: Result, opts: Options, cfg, args, md_path: str) -> tuple
     errors = [o.error for o in outcomes if o.status == "failed"]
     if errors:
         emit(args, {"event": "warning", "message": f"AI correction failed on {len(errors)} page(s): {errors[0]}"})
-    summary = {"provider": cfg.provider, "model": cfg.model, **counts, "first_error": errors[0] if errors else "",
+    summary = {"provider": cfg.provider, "model": cfg.model, **counts,
+               "kept_passages": sum(o.kept for o in outcomes),
+               "first_error": errors[0] if errors else next((o.error for o in outcomes if o.kept), ""),
                "seconds": round(time.monotonic() - t0, 1)}
     return aimod.join_pages([(o.page, o.text) for o in outcomes], markers=opts.page_markers), summary
 
