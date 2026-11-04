@@ -35,6 +35,7 @@ struct AIReport: Decodable, Equatable {
     var unchanged: Int
     var skipped: Int
     var failed: Int
+    var keptPassages: Int?
     var firstError: String
     var seconds: Double
     enum CodingKeys: String, CodingKey {
