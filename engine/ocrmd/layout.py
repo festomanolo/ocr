@@ -442,6 +442,8 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
     lines = [l for l in block.lines if l.text]
     if not lines:
         return items
+    if len(lines) >= 2 and all(l.all_mono for l in lines):          # a block of code
+        return [Item("code", "```\n" + "\n".join(l.text for l in lines) + "\n```", page.number)]
     widths = [l.bbox[2] - l.bbox[0] for l in lines]
     max_w = max(widths) if widths else 0
 
@@ -452,13 +454,28 @@ def block_items(page: Page, block: Block, styler: Styler) -> List[Item]:
 
     def flush():
         nonlocal cur, cur_kind, cur_level
-        text = join_lines(cur)
+        text = join_lines(cur, styler.vocab)
         if text:
             items.append(Item(cur_kind, text, page.number, cur_level))
         cur, cur_kind, cur_level = [], "para", 0
 
     single = len(lines) <= 2
-    for line in lines:
+    # Short runs of all-bold lines (a Word-style section title) that start the block or follow a finished sentence.
+    bold_title_lines: set = set()
+    i = 0
+    while i < len(lines):
+        if not lines[i].all_bold:
+            i += 1
+            continue
+        j = i
+        while j < len(lines) and lines[j].all_bold:
+            j += 1
+        run = lines[i:j]
+        after_sentence = i == 0 or lines[i - 1].text.rstrip().endswith((".", "!", "?", ":", ";"))
+        if len(run) <= 3 and sum(len(l.text.split()) for l in run) <= 16 and after_sentence:
+            bold_title_lines.update(range(i, j))
+        i = j
+    for idx, line in enumerate(lines):
         text = line.text
         level = styler.level(page, line)
         if level and page.kind == "ocr" and len(lines) > 2:   # inside a paragraph: just a tall line
