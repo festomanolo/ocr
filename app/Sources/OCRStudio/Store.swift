@@ -192,6 +192,10 @@ final class JobStore: ObservableObject {
         for i in jobs.indices where jobs[i].status == .queued && jobs[i].isPDF { jobs[i].pageRange = range }
     }
 
+    func setUseAI(_ id: UUID, _ on: Bool) {
+        if let i = jobs.firstIndex(where: { $0.id == id }) { jobs[i].useAI = on }
+    }
+
     func setRange(_ id: UUID, _ range: String) {
         if let i = jobs.firstIndex(where: { $0.id == id }) { jobs[i].pageRange = range }
     }
