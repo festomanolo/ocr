@@ -39,8 +39,9 @@ Do:
 Do not:
 - Add, summarise, explain or reorder content. If a passage is unreadable, keep it as it is.
 - Change numbers, formulas, names or code unless it is clearly an OCR error.
-- Touch lines that look like ![alt](path) — copy them exactly.
-- Wrap the answer in code fences or add comments."""
+- Touch tokens like ⟦FIG1⟧ — copy them exactly, each on its own line.
+- Guess. If you are not confident what a garbled word should be, leave it as it is.
+- Wrap the answer in code fences, repeat the context tags, or add comments."""
 
 
 @dataclass
@@ -127,6 +128,8 @@ def build_user_message(prev_tail: str, page: str, next_head: str) -> str:
 
 def clean_answer(text: str) -> str:
     t = text.strip()
+    t = re.sub(r"^\s*<page>\s*", "", t)                      # opening tag echoed back
+    t = re.split(r"</page>|<next_page_start>|<previous_page_end>", t)[0].strip()   # leaked context
     m = FENCE_RE.match(t)
     if m:
         t = m.group(1).strip()
