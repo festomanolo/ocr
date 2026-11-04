@@ -75,6 +75,29 @@ def needs_ocr(page: "fitz.Page", mode: str) -> bool:
     return bad / len(stripped) > 0.3     # garbled / private-use glyph text layer
 
 
+def native_dpi(page: "fitz.Page") -> Optional[float]:
+    """Real resolution of a scanned page (pixels of its main image / inches it covers)."""
+    best = None
+    for info in page.get_image_info():
+        r = fitz.Rect(info["bbox"]) & page.rect
+        if r.width * r.height < 0.5 * page.rect.width * page.rect.height or r.width <= 0:
+            continue
+        dpi = info["width"] / (r.width / 72)
+        best = dpi if best is None else max(best, dpi)
+    return best
+
+
+def render_dpi(page: "fitz.Page", opts: "Options") -> int:
+    """Upscaling a 90 dpi scan to 300 dpi adds pixels but no information, and Tesseract's time
+    grows with pixel count — so cap the render at ~2x the scan's real resolution."""
+    if not opts.auto_dpi:
+        return opts.dpi
+    nd = native_dpi(page)
+    if nd is None:
+        return opts.dpi
+    return int(max(150, min(opts.dpi, nd * 2)))
+
+
 def _full_page_image(page: "fitz.Page") -> bool:
     area = page.rect.width * page.rect.height
     for info in page.get_image_info():
