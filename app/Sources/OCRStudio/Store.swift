@@ -325,7 +325,7 @@ final class JobStore: ObservableObject {
         case "ai_page_start":
             if let p = ev.page { update(id) { $0.aiState[p] = .running } }
         case "ai_page":
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+            do {
                 update(id) {
                     guard let p = ev.page else { return }
                     switch ev.status ?? "" {
