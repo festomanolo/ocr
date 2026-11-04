@@ -167,3 +167,50 @@ def test_openrouter_requires_key():
     c = ai.AIConfig(provider="openrouter", model="x", api_key="", retries=0)
     with pytest.raises(ai.AIError, match="API key"):
         ai.chat(c, "s", "u", 10)
+
+
+def test_cli_end_to_end_with_ai(tmp_path):
+    """Whole CLI against the mock server: writes both the corrected and the original OCR Markdown."""
+    import subprocess
+    fx = tmp_path / "fx"
+    subprocess.run([sys.executable, os.path.join(ROOT, "tests", "make_fixtures.py"), str(fx)], check=True)
+    m = Mock(lambda user: (200, page_of(user).replace("mitochondrion", "MITOCHONDRION")))
+    try:
+        out = subprocess.run(
+            [sys.executable, "-m", "ocrmd", str(fx / "digital.pdf"), "-o", str(tmp_path / "o"), "--json",
+             "--ai", "ollama", "--ai-model", "m", "--ai-url", m.url, "--ai-scope", "all", "--ai-workers", "3"],
+            cwd=os.path.join(ROOT, "engine"), capture_output=True, text=True, check=True)
+    finally:
+        m.close()
+    lines = out.stdout.splitlines()
+    assert not [l for l in lines if not l.startswith("{")], [l for l in lines if not l.startswith("{")][:3]
+    events = [json.loads(l) for l in lines]
+    done = events[-1]
+    assert done["ai"]["corrected"] >= 1 and done["ai"]["failed"] == 0
+    assert any(e["event"] == "ai_page_start" for e in events)
+    d = tmp_path / "o" / "digital"
+    assert "MITOCHONDRION" in (d / "digital.md").read_text() or "MITOCHONDRION" in (d / "digital.md").read_text().upper()
+    raw = (d / "digital.ocr.md").read_text()
+    assert "MITOCHONDRION" not in raw and "mitochondrion" in raw.lower()
+    assert m.max_active >= 2
+
+
+def test_long_page_is_corrected_passage_by_passage_and_a_bad_passage_keeps_original():
+    sentence = "Teh mitochondna produces energy for the cell in many different ways today. "
+    paras = [f"Paragraph {i}: " + sentence * 3 for i in range(1, 7)]
+    page = "\n\n".join(paras)
+
+    def handler(user):
+        text = page_of(user)
+        if "Paragraph 3" in text:
+            return 200, "x"                                   # this passage comes back garbage
+        return 200, text.replace("Teh", "The").replace("mitochondna", "mitochondria")
+    m = Mock(handler)
+    try:
+        out = ai.refine([(1, page)], {1: "ocr"}, {}, cfg(m, workers=1))
+    finally:
+        m.close()
+    assert len(m.prompts) >= 2                                # several requests for one page
+    assert out[0].status == "corrected" and out[0].kept >= 1
+    assert "Paragraph 6: The mitochondria" in out[0].text      # later passage was corrected
+    assert "Paragraph 3: Teh mitochondna" in out[0].text       # the rejected passage stays as OCR
