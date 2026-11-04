@@ -305,7 +305,7 @@ struct OutputPanel: View {
                 }
                 .onChange(of: done.count) { _ in
                     guard follow else { return }
-                    withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo("reading", anchor: .bottom) }
+                    proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
         }
