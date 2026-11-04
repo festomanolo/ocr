@@ -25,7 +25,7 @@ except ImportError:  # pragma: no cover
 import numpy as np
 from PIL import Image
 
-from . import imaging, layout, tess
+from . import imaging, layout, tess, vision as visionmod
 from .layout import Block, Line, Page, Span
 
 MIN_PAGE_CHARS = 25                      # fewer non-space chars than this → scanned page (Sphere rule)
