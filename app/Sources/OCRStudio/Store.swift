@@ -231,8 +231,10 @@ final class JobStore: ObservableObject {
         while runs.count < concurrency(settings), let next = jobs.first(where: { $0.status == .queued }) {
             launch(next, settings)
         }
-        pumping = true
-        let settings = ConvertSettings.load()
+        if !hasQueued && runs.isEmpty { started = false }
+    }
+
+    private func launch(_ job: Job, _ settings: ConvertSettings) {
         try? FileManager.default.createDirectory(at: settings.outputDir, withIntermediateDirectories: true)
         let id = next.id
         update(id) { $0.status = .running }
