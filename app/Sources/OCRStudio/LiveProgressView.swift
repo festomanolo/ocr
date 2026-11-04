@@ -1,0 +1,389 @@
+import PDFKit
+import SwiftUI
+
+// MARK: - Layout: progress header · pages being processed (left) · live output (right)
+
+struct LiveProgressView: View {
+    @EnvironmentObject var store: JobStore
+    let job: Job
+    @StateObject private var thumbs: Thumbnailer
+
+    init(job: Job) {
+        self.job = job
+        _thumbs = StateObject(wrappedValue: Thumbnailer(url: job.url))
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ProgressHeader(job: job)
+            Divider()
+            HStack(spacing: 0) {
+                PagesPanel(job: job, thumbs: thumbs)
+                    .frame(minWidth: 300, idealWidth: 380, maxWidth: 460)
+                Divider()
+                OutputPanel(job: job)
+                    .frame(minWidth: 340, maxWidth: .infinity)
+            }
+        }
+    }
+}
+
+// MARK: Header
+
+struct ProgressHeader: View {
+    @EnvironmentObject var store: JobStore
+    let job: Job
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let elapsed = job.startedAt.map { ctx.date.timeIntervalSince($0) } ?? 0
+            let eta = estimate(elapsed: elapsed)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(job.total == 0 ? "Opening document…" : "Converting").font(.title3.weight(.semibold))
+                    Text(job.total > 0 ? "page \(job.done) of \(job.total)" : "")
+                        .font(.title3).foregroundStyle(.secondary).monospacedDigit()
+                    Spacer()
+                    Button(role: .cancel) { store.stop() } label: { Label("Stop", systemImage: "stop.fill") }
+                        .controlSize(.regular)
+                }
+                ProgressView(value: job.fraction)
+                    .progressViewStyle(.linear)
+                    .animation(.easeOut(duration: 0.4), value: job.done)
+                HStack(spacing: 16) {
+                    Stat(icon: "percent", text: "\(Int(job.fraction * 100))%")
+                    Stat(icon: "clock", text: format(elapsed) + " elapsed")
+                    if let eta { Stat(icon: "hourglass", text: "about " + format(eta) + " left") }
+                    if job.workers > 0 { Stat(icon: "square.grid.2x2", text: "\(job.workers) page\(job.workers == 1 ? "" : "s") at once") }
+                    if job.ocrPages > 0 { Stat(icon: "eye", text: "Tesseract · \(job.lang)") }
+                    Spacer()
+                }
+                .font(.caption)
+            }
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .background(.bar)
+        }
+    }
+
+    private func estimate(elapsed: TimeInterval) -> TimeInterval? {
+        guard job.done >= 2, job.total > job.done, elapsed > 3 else { return nil }
+        return elapsed / Double(job.done) * Double(job.total - job.done)
+    }
+
+    private func format(_ t: TimeInterval) -> String {
+        let s = Int(t.rounded())
+        return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60)
+                         : String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+struct Stat: View {
+    let icon: String
+    let text: String
+    var body: some View {
+        Label { Text(text).monospacedDigit() } icon: { Image(systemName: icon) }
+            .foregroundStyle(.secondary)
+    }
+}
+
+// MARK: Pages panel
+
+struct PagesPanel: View {
+    let job: Job
+    @ObservedObject var thumbs: Thumbnailer
+    @State private var follow = true
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Pages").font(.headline)
+                Spacer()
+                Toggle(isOn: $follow) { Text("Follow") }.toggleStyle(.switch).controlSize(.mini)
+                    .help("Keep the page being read in view")
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            Divider()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 78, maximum: 104), spacing: 12)], spacing: 14) {
+                        ForEach(job.pages, id: \.self) { n in
+                            PageTile(number: n, state: job.pageState[n] ?? .pending,
+                                     result: job.results[n], thumbs: thumbs)
+                                .id(n)
+                        }
+                    }
+                    .padding(16)
+                }
+                .onChange(of: runningAnchor) { anchor in
+                    guard follow, let anchor else { return }
+                    withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo(anchor, anchor: .center) }
+                }
+            }
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    /// The lowest page currently being read.
+    private var runningAnchor: Int? {
+        job.pages.first { job.pageState[$0] == .running }
+    }
+}
+
+struct PageTile: View {
+    let number: Int
+    let state: PageState
+    let result: PageResult?
+    @ObservedObject var thumbs: Thumbnailer
+    @State private var image: NSImage?
+    @State private var beam: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 5) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.quaternary.opacity(0.5))
+                if let image {
+                    Image(nsImage: image).resizable().scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .padding(3)
+                        .saturation(state == .pending ? 0 : 1)
+                        .opacity(state == .pending ? 0.55 : 1)
+                } else {
+                    Image(systemName: "doc").foregroundStyle(.tertiary)
+                }
+                if state == .running { scanBeam }
+            }
+            .aspectRatio(0.72, contentMode: .fit)
+            .overlay {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(state == .running ? Color.accentColor : Color.primary.opacity(0.08),
+                                  lineWidth: state == .running ? 2 : 1)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if state == .done {
+                    Image(systemName: "checkmark.circle.fill")
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, .green)
+                        .font(.system(size: 17))
+                        .background(Circle().fill(.background).padding(2))
+                        .offset(x: 5, y: 5)
+                        .transition(.scale(scale: 0.2).combined(with: .opacity))
+                }
+            }
+            .shadow(color: state == .running ? Color.accentColor.opacity(0.35) : .clear, radius: 8, y: 2)
+            .scaleEffect(state == .running ? 1.05 : 1)
+            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: state)
+
+            HStack(spacing: 3) {
+                Text("\(number)").monospacedDigit()
+                if let r = result, r.kind == "ocr" { Image(systemName: "eye").font(.system(size: 8)) }
+            }
+            .font(.caption2.weight(state == .running ? .semibold : .regular))
+            .foregroundStyle(state == .running ? Color.accentColor : .secondary)
+        }
+        .task { image = await thumbs.image(for: number) }
+        .onChange(of: state) { s in
+            guard s == .running, !reduceMotion else { return }
+            beam = 0
+            withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
+        }
+        .onAppear {
+            if state == .running, !reduceMotion {
+                withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) { beam = 1 }
+            }
+        }
+    }
+
+    /// A soft scan line sweeping over the page that is being read.
+    @ViewBuilder private var scanBeam: some View {
+        if reduceMotion {
+            Rectangle().fill(Color.accentColor.opacity(0.12))
+        } else {
+            GeometryReader { g in
+                LinearGradient(colors: [.clear, Color.accentColor.opacity(0.55), .clear],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 26)
+                    .offset(y: (g.size.height - 26) * beam)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+// MARK: Live output
+
+struct OutputPanel: View {
+    let job: Job
+    @State private var follow = true
+
+    private var donePages: [Int] { job.pages.filter { job.results[$0] != nil } }
+    private var running: [Int] { job.pages.filter { job.pageState[$0] == .running } }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Live output").font(.headline)
+                Spacer()
+                Text("\(donePages.count) of \(job.pages.count) pages").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                Toggle(isOn: $follow) { Text("Follow") }.toggleStyle(.switch).controlSize(.mini)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            Divider()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 14) {
+                        if donePages.isEmpty { Waiting() }
+                        ForEach(donePages, id: \.self) { n in
+                            if let r = job.results[n] {
+                                PageCard(number: n, result: r, outDir: job.outDir)
+                                    .id(n)
+                                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
+                                                            removal: .opacity))
+                            }
+                        }
+                        if !running.isEmpty { ReadingRow(pages: running).id("reading") }
+                    }
+                    .padding(16)
+                }
+                .onChange(of: donePages.count) { _ in
+                    guard follow else { return }
+                    withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo("reading", anchor: .bottom) }
+                }
+            }
+        }
+    }
+}
+
+struct Waiting: View {
+    @State private var on = false
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "text.viewfinder").font(.system(size: 34, weight: .light))
+            Text("The first page will appear here as soon as it's read.").multilineTextAlignment(.center)
+        }
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity).padding(.vertical, 60)
+        .opacity(on ? 1 : 0.55)
+        .onAppear { withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { on = true } }
+    }
+}
+
+struct ReadingRow: View {
+    let pages: [Int]
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Reading page\(pages.count == 1 ? "" : "s") " + pages.prefix(6).map(String.init).joined(separator: ", ")
+                 + (pages.count > 6 ? "…" : ""))
+                .foregroundStyle(.secondary)
+        }
+        .font(.callout)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(.quaternary.opacity(0.5), in: Capsule())
+    }
+}
+
+struct PageCard: View {
+    let number: Int
+    let result: PageResult
+    let outDir: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Text("Page \(number)").font(.subheadline.weight(.semibold))
+                Chip(icon: result.kind == "ocr" ? "eye" : "textformat",
+                     text: result.kind == "ocr" ? "OCR" : "Text layer",
+                     tint: result.kind == "ocr" ? .purple : .secondary)
+                if let c = result.confidence {
+                    Chip(icon: "checkmark.seal", text: "\(Int(c))%", tint: c >= 80 ? .green : (c >= 60 ? .orange : .red))
+                }
+                Spacer()
+            }
+            if result.markdown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("No text on this page").font(.callout).foregroundStyle(.tertiary)
+            } else {
+                MarkdownLite(markdown: result.markdown, outDir: outDir)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
+        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+    }
+}
+
+/// Small, fast Markdown renderer for the live feed (headings, lists, tables, figures, inline styles).
+struct MarkdownLite: View {
+    let markdown: String
+    let outDir: String?
+
+    private var blocks: [String] {
+        markdown.components(separatedBy: "\n\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in block(b) }
+        }
+    }
+
+    @ViewBuilder private func block(_ b: String) -> some View {
+        if b.hasPrefix("!["), let path = b.range(of: "](").map({ String(b[$0.upperBound...]).prefix(while: { $0 != ")" }) }) {
+            if let outDir {
+                Thumbnail(url: URL(fileURLWithPath: outDir).appendingPathComponent(String(path)))
+                    .frame(maxWidth: .infinity, minHeight: 90, maxHeight: 220)
+                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
+            }
+        } else if b.hasPrefix("#") {
+            let level = b.prefix(while: { $0 == "#" }).count
+            Text(inline(String(b.drop(while: { $0 == "#" || $0 == " " }))))
+                .font(level == 1 ? .title2.weight(.bold) : level == 2 ? .title3.weight(.semibold) : .headline)
+        } else if b.hasPrefix("|") {
+            Text(b).font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
+                .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+        } else if b.hasPrefix("*") && b.hasSuffix("*") && !b.hasPrefix("**") {
+            Text(inline(b)).font(.callout).foregroundStyle(.secondary)
+        } else {
+            Text(inline(b)).font(.body).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func inline(_ s: String) -> AttributedString {
+        (try? AttributedString(markdown: s, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(s)
+    }
+}
+
+// MARK: Page thumbnails (PDFKit, one serial queue per document)
+
+final class Thumbnailer: ObservableObject, @unchecked Sendable {
+    private let doc: PDFDocument?
+    private let imageURL: URL?
+    private let queue = DispatchQueue(label: "ocrstudio.thumbs", qos: .utility)
+    private let cache = NSCache<NSNumber, NSImage>()
+
+    init(url: URL) {
+        if url.pathExtension.lowercased() == "pdf" { doc = PDFDocument(url: url); imageURL = nil }
+        else { doc = nil; imageURL = url }
+    }
+
+    func image(for page: Int) async -> NSImage? {
+        if let hit = cache.object(forKey: NSNumber(value: page)) { return hit }
+        return await withCheckedContinuation { cont in
+            queue.async { [self] in
+                var img: NSImage?
+                if let p = doc?.page(at: page - 1) {
+                    img = p.thumbnail(of: CGSize(width: 200, height: 280), for: .mediaBox)
+                } else if let imageURL {
+                    img = NSImage(contentsOf: imageURL)
+                }
+                if let img { cache.setObject(img, forKey: NSNumber(value: page)) }
+                cont.resume(returning: img)
+            }
+        }
+    }
+}
