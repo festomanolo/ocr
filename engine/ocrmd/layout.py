@@ -354,12 +354,13 @@ def esc(text: str) -> str:
 
 
 def fmt_spans(spans: Sequence[Span]) -> str:
-    """Bold/italic runs → **…** / *…* with whitespace kept outside the markers."""
-    runs: List[List] = []
+    """Bold/italic/code/link runs → Markdown, with whitespace kept outside the markers."""
+    runs: List[List] = []          # [text, bold, italic, mono, href]
     for s in spans:
         if not s.text:
             continue
-        if runs and runs[-1][1] == s.bold and runs[-1][2] == s.italic:
+        key = (s.bold, s.italic, s.mono, s.href)
+        if runs and tuple(runs[-1][1:]) == key:
             runs[-1][0] += s.text
         else:
             runs.append([s.text, s.bold, s.italic])
