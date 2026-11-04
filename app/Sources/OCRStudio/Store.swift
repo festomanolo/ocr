@@ -23,6 +23,24 @@ struct ConvertSettings {
     var aiWorkers: Int
     var aiScope: String         // "ocr" | "all"
     var aiSkipConfident: Bool
+    // Vision layer (Xiaomi-OCR-0 or any OpenAI-compatible vision server)
+    var visionEnabled: Bool
+    var visionProvider: String      // "ollama" | "openai"
+    var visionModel: String
+    var visionURL: String
+    var visionMode: String          // "low-confidence" | "all"
+    var visionMinConf: Int
+
+    static let defaultVisionModel = "longwayxu/xiaomi-ocr-0:bf16"
+
+    var visionArguments: [String] {
+        guard visionEnabled else { return [] }
+        var a = ["--vision", visionProvider, "--vision-mode", visionMode, "--vision-min-conf", String(visionMinConf)]
+        let model = visionModel.trimmingCharacters(in: .whitespaces)
+        if !model.isEmpty { a += ["--vision-model", model] }
+        if !visionURL.trimmingCharacters(in: .whitespaces).isEmpty { a += ["--vision-url", visionURL] }
+        return a
+    }
 
     /// ~/Documents/ocr
     static var defaultOutput: URL {
