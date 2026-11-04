@@ -69,8 +69,11 @@ struct JobDetailView: View {
                 }
             }
             if let r = job.report {
-                HStack(alignment: .center, spacing: 12) {
-                    ScrollView(.horizontal, showsIndicators: false) {
+                Picker("", selection: $tab) {
+                    ForEach(DetailTab.allCases.filter { ($0 != .figures || r.figures > 0) && ($0 != .original || r.ai != nil) }) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: r.ai != nil ? 400 : 270)
+                ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             Chip(icon: "doc.plaintext", text: "\(r.pages) pages")
                             if r.textPages > 0 { Chip(icon: "textformat", text: "\(r.textPages) text layer") }
