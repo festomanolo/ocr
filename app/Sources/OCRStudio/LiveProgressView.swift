@@ -264,6 +264,7 @@ struct PageTile: View {
 struct OutputPanel: View {
     let job: Job
     @State private var follow = true
+    private static let visibleCount = 12          // keeps the live feed light; the full text is in the final preview
 
     private var donePages: [Int] { job.pages.filter { job.results[$0] != nil } }
     private var running: [Int] {
